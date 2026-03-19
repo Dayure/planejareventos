@@ -618,7 +618,7 @@ document.getElementById('apikey-overlay').addEventListener('click',e=>{if(e.targ
 // ══ API CALL HELPER ════════════════════════════════════
 function getHeaders(){
   const key=getKey();
-  if(key) return{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'};
+  if(key) return{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
   // Running inside claude.ai — use browser access header
   return{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'};
 }
