@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sistema de Produção de Eventos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#141210;--ink2:#5a534d;--ink3:#9a9089;--paper:#faf8f5;--paper2:#f0ede8;--paper3:#e5e0d8;--gold:#c9a84c;--gold2:#e8c96a;--gold-bg:#fdf6e3;--gold-bd:#e0c878;--green:#2d6a4f;--green-bg:#e8f5ee;--red:#c0392b;--red-bg:#fdecea;--blue:#1a4a7a;--r:10px;--rlg:16px;--sh:0 2px 12px rgba(20,18,16,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh}
+.shell{max-width:900px;margin:0 auto;padding:2rem 1.5rem 5rem}
+.hdr{text-align:center;padding:2rem 0 1.75rem}
+.hdr-tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:10px}
+.hdr h1{font-family:'DM Serif Display',serif;font-size:34px;font-weight:400;line-height:1.2;margin-bottom:6px}
+.hdr h1 em{font-style:italic;color:var(--gold)}
+.hdr p{font-size:13px;color:var(--ink2)}
+.hdr-nav{display:flex;justify-content:center;gap:8px;margin-top:12px}
+.hdr-nav button{padding:6px 16px;font-size:12px;font-weight:600;border:1.5px solid var(--paper3);border-radius:20px;background:#fff;color:var(--ink2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.hdr-nav button:hover{border-color:var(--gold);color:var(--ink)}
+.hdr-nav button.active-nav{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.prog{display:flex;margin-bottom:2rem;border:1px solid var(--paper3);border-radius:var(--rlg);overflow:hidden;background:var(--paper2)}
+.ps{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:.03em;transition:all .3s;border:none;background:transparent;font-family:'DM Sans',sans-serif;cursor:default}
+.ps.done{background:var(--gold-bg);color:var(--gold);cursor:pointer}.ps.done:hover{background:#f9efce}
+.ps.active{background:var(--ink);color:var(--paper)}
+.ps .sn{display:block;font-size:15px;font-weight:600;margin-bottom:1px}
+.ps.active .sn{color:var(--gold2)}.ps.done .sn{color:var(--gold)}
+.card{background:#fff;border:1px solid var(--paper3);border-radius:var(--rlg);padding:1.75rem 2rem;margin-bottom:1.25rem;box-shadow:var(--sh)}
+.card-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--ink2);margin-bottom:1.25rem}
+.hint-bar{font-size:12px;color:var(--ink3);margin-bottom:1.25rem;padding:8px 12px;background:var(--paper2);border-radius:var(--r);border-left:3px solid var(--gold)}
+.field{margin-bottom:1.25rem}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin-bottom:7px}
+.field input,.field textarea,.field select{width:100%;padding:11px 14px;border:1.5px solid var(--paper3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--paper);transition:border-color .2s;outline:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold);background:#fff}
+.field textarea{resize:vertical;min-height:80px}
+.fhint{font-size:12px;color:var(--ink3);margin-top:5px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:520px){.row2{grid-template-columns:1fr}}
+.sel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:10px}
+@media(max-width:520px){.sel-grid{grid-template-columns:repeat(2,1fr)}}
+.sel-btn{border:1.5px solid var(--paper3);border-radius:var(--r);padding:13px 8px;cursor:pointer;text-align:center;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:var(--paper);color:var(--ink2);transition:all .18s;user-select:none}
+.sel-btn:hover{border-color:var(--gold2);color:var(--ink);background:var(--gold-bg)}
+.sel-btn.on{border-color:var(--gold);background:var(--gold-bg);color:var(--ink);font-weight:600;box-shadow:0 0 0 1px var(--gold-bd)}
+.sel-icon{font-size:20px;display:block;margin-bottom:5px}
+.fmt-opts{display:flex;flex-direction:column;gap:9px;margin-bottom:10px}
+.fmt-opt{border:1.5px solid var(--paper3);border-radius:var(--r);padding:13px 15px;cursor:pointer;transition:all .18s;display:flex;gap:12px;align-items:flex-start;background:var(--paper);user-select:none}
+.fmt-opt:hover{border-color:var(--gold2);background:var(--gold-bg)}.fmt-opt.on{border-color:var(--gold);background:var(--gold-bg);box-shadow:0 0 0 1px var(--gold-bd)}
+.fmt-icon{font-size:19px;flex-shrink:0;margin-top:1px}.fmt-title{font-size:14px;font-weight:600;margin-bottom:2px}.fmt-desc{font-size:12px;color:var(--ink2);line-height:1.5}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-top:8px}
+.stag{display:inline-flex;align-items:center;gap:6px;background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--ink)}
+.stag-rm{background:none;border:none;cursor:pointer;color:var(--ink3);font-size:15px;line-height:1;padding:0}.stag-rm:hover{color:var(--red)}
+.num-wrap{display:flex;align-items:center;gap:12px}
+.num-wrap input[type=number]{width:160px;flex-shrink:0}
+.num-disp{font-size:15px;font-weight:600;color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+.btn-ink{background:var(--ink);color:var(--paper)}.btn-ink:hover{background:#2a2520;transform:translateY(-1px)}
+.btn-ink:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;color:var(--ink2);border:1.5px solid var(--paper3)}.btn-ghost:hover{border-color:var(--ink2);color:var(--ink)}
+.btn-gold{background:var(--gold);color:var(--ink)}.btn-gold:hover{background:#b8913a;transform:translateY(-1px)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#245540}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:1.5rem}
+.err{background:var(--red-bg);border:1px solid #f5c6c2;border-radius:var(--r);padding:13px 16px;font-size:13px;color:var(--red);margin-bottom:1rem}
+
+/* ── LOADING SCREEN ── */
+.load-screen{text-align:center;padding:2rem 1rem}
+.load-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px}
+.load-sub{font-size:13px;color:var(--ink2);margin-bottom:2rem}
+.load-prog-wrap{max-width:400px;margin:0 auto 2rem}
+.load-prog-bar{height:8px;background:var(--paper3);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.load-prog-fill{height:100%;background:var(--gold);border-radius:4px;transition:width .6s ease;width:0%}
+.load-prog-pct{font-size:13px;font-weight:700;color:var(--gold)}
+.load-steps{max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+.lstep{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper2);font-size:13px;color:var(--ink3);transition:all .4s}
+.lstep:last-child{border-bottom:none}.lstep.active{color:var(--ink);font-weight:500}.lstep.done{color:var(--green)}
+.ldot{width:20px;height:20px;border-radius:50%;border:2px solid var(--paper3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;transition:all .4s;color:transparent}
+.lstep.active .ldot{border-color:var(--gold);background:var(--gold-bg);animation:pulse 1s infinite}
+.lstep.done .ldot{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.4)}50%{box-shadow:0 0 0 6px rgba(201,168,76,0)}}
+.load-done-screen{display:none;text-align:center;padding:2rem 1rem}
+.load-check{font-size:80px;animation:popIn .5s cubic-bezier(.17,.67,.4,1.3)}
+@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.load-done-title{font-family:'DM Serif Display',serif;font-size:26px;margin-top:1rem;margin-bottom:6px}
+.load-done-sub{font-size:13px;color:var(--ink2)}
+
+/* ── RESULT ── */
+.res-hdr{background:var(--ink);color:var(--paper);border-radius:var(--rlg);padding:1.75rem 2rem;margin-bottom:1.25rem}
+.res-hdr .rtag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);margin-bottom:8px}
+.res-hdr h2{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:8px}
+.res-hdr .rmeta{font-size:13px;color:rgba(250,248,245,.6);display:flex;flex-wrap:wrap;gap:14px}
+.stabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.25rem}
+.stab{padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--paper3);border-radius:20px;background:#fff;color:var(--ink2);transition:all .15s;font-family:'DM Sans',sans-serif}
+.stab:hover{border-color:var(--gold2);color:var(--ink)}.stab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.spanel{display:none}.spanel.on{display:block}
+.slabel{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.sblock{margin-bottom:1.25rem}
+.divider{border:none;border-top:1px solid var(--paper2);margin:1rem 0}
+.icard{background:var(--paper);border:1px solid var(--paper3);border-radius:var(--r);padding:13px 15px;margin-bottom:8px}
+.icard .ilabel{font-size:11px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.icard .ival{font-size:13px;line-height:1.6}
+.names-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.name-chip{background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:8px;padding:8px 15px;font-size:13px;font-weight:600}
+.rot-list{display:flex;flex-direction:column}
+.rot-item{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--paper2)}.rot-item:last-child{border-bottom:none}
+.rot-time{min-width:88px;font-size:12px;font-weight:700;color:var(--gold);flex-shrink:0;padding-top:2px}
+.rot-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;background:var(--paper2);border-radius:4px;color:var(--ink2);margin-bottom:4px}
+.rot-title{font-size:13px;font-weight:600;margin-bottom:3px}.rot-desc{font-size:13px;color:var(--ink2);line-height:1.6}
+.tl{display:flex;flex-direction:column}
+.tli{display:flex;gap:13px;padding-bottom:16px}.tli:last-child{padding-bottom:0}
+.tll{display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0}
+.tld{width:10px;height:10px;border-radius:50%;background:var(--gold);margin-top:4px;flex-shrink:0}
+.tlln{width:1px;flex:1;background:var(--paper3);margin-top:3px}.tli:last-child .tlln{display:none}
+.tl-phase{font-size:13px;font-weight:600}.tl-prazo{font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.tl-acts{list-style:none;padding:0}.tl-acts li{font-size:12px;color:var(--ink2);padding:2px 0 2px 13px;position:relative}.tl-acts li::before{content:'—';position:absolute;left:0;color:var(--paper3)}
+.forn-list{display:flex;flex-direction:column}
+.forn-item{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--paper2)}.forn-item:last-child{border-bottom:none}
+.forn-name{font-size:13px;font-weight:600;margin-bottom:2px}.forn-det{font-size:12px;color:var(--ink2);line-height:1.5}
+.forn-badge{font-size:11px;font-weight:700;padding:3px 9px;background:var(--gold-bg);border:1px solid var(--gold-bd);color:var(--gold);border-radius:6px;flex-shrink:0;white-space:nowrap;margin-top:1px}
+.chk-group{margin-bottom:1.1rem}
+.chk-gtitle{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--paper2)}
+.chk-item{display:flex;gap:10px;align-items:flex-start;padding:5px 0;cursor:pointer}
+.chk-box{width:16px;height:16px;border:2px solid var(--paper3);border-radius:4px;flex-shrink:0;margin-top:1px;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.chk-item:hover .chk-box{border-color:var(--gold)}.chk-item.done .chk-box{background:var(--green);border-color:var(--green)}
+.chk-item.done .chk-txt{color:var(--ink3);text-decoration:line-through}.chk-txt{font-size:13px;line-height:1.5}
+.com-list{display:flex;flex-direction:column}.com-item{padding:10px 0;border-bottom:1px solid var(--paper2)}.com-item:last-child{border-bottom:none}
+.com-fase{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.com-item ul{padding-left:1.2rem}.com-item li{font-size:13px;color:var(--ink2);margin-bottom:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{background:var(--paper2);border-radius:6px;padding:5px 11px;font-size:12px;font-weight:500}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.two-col{grid-template-columns:1fr}}
+.tip-item{background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;font-size:13px;line-height:1.6}
+.tip-num{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.edit-box{margin-top:1.25rem;border:1.5px dashed var(--paper3);border-radius:var(--r);padding:14px;background:var(--paper)}
+.edit-box-title{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px}
+.edit-box textarea{width:100%;min-height:70px;padding:10px;border:1.5px solid var(--paper3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:#fff;resize:vertical;outline:none}
+.edit-box textarea:focus{border-color:var(--gold)}
+.hist-box{margin-top:10px;border-radius:var(--r);border:1px solid var(--paper3);overflow:hidden}
+.hist-header{background:var(--paper2);padding:8px 12px;font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.hist-header:hover{background:var(--paper3)}.hist-body{display:none;padding:10px 12px}.hist-body.open{display:block}
+.hist-entry{font-size:12px;color:var(--ink2);padding:6px 0;border-bottom:1px solid var(--paper2)}.hist-entry:last-child{border-bottom:none}
+.hist-entry .hist-date{font-size:10px;color:var(--ink3);margin-bottom:6px;font-weight:600}
+.hist-entry .hist-full{font-size:12px;color:var(--ink2);line-height:1.7}
+.hist-entry .hist-full b{color:var(--ink);font-weight:600}
+.budget-total{background:var(--ink);color:var(--paper);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.budget-total .bt-label{font-size:13px;color:rgba(250,248,245,.7)}
+.budget-total .bt-val{font-family:'DM Serif Display',serif;font-size:28px;color:var(--gold2)}
+.budget-table{width:100%;border-collapse:collapse;font-size:13px}
+.budget-table th{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:6px 8px;text-align:left;border-bottom:2px solid var(--paper3)}
+.budget-table td{padding:8px 8px;border-bottom:1px solid var(--paper2);vertical-align:middle}
+.budget-table tr:last-child td{border-bottom:none}
+.budget-table input[type=number]{width:90px;padding:5px 8px;border:1.5px solid var(--paper3);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--paper);outline:none;text-align:right}
+.budget-table input[type=number]:focus{border-color:var(--gold);background:#fff}
+.row-val{font-weight:600;color:var(--green)}.row-del{cursor:pointer;color:var(--ink3);border:none;background:none;font-size:16px;padding:0 4px}.row-del:hover{color:var(--red)}
+.bud-warn{font-size:12px;color:var(--red);margin-top:6px;display:none}.bud-ok{font-size:12px;color:var(--green);margin-top:6px;display:none}
+.sup-cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.sup-cat{padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--paper3);border-radius:20px;background:#fff;color:var(--ink2);font-family:'DM Sans',sans-serif;transition:all .15s}
+.sup-cat:hover{border-color:var(--gold2);color:var(--ink)}.sup-cat.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sup-panel{display:none}.sup-panel.on{display:block}
+.sup-table{width:100%;border-collapse:collapse;font-size:13px}
+.sup-table th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:5px 8px;text-align:left;border-bottom:2px solid var(--paper3)}
+.sup-table td{padding:9px 8px;border-bottom:1px solid var(--paper2);vertical-align:top}.sup-table tr:last-child td{border-bottom:none}
+.sup-name{font-weight:600}.sup-desc{font-size:12px;color:var(--ink2);margin-top:2px}.sup-price{font-weight:700;color:var(--green);white-space:nowrap}.sup-note{font-size:11px;color:var(--ink3)}
+.hist-card{background:#fff;border:1px solid var(--paper3);border-radius:var(--rlg);padding:1.25rem 1.5rem;margin-bottom:10px;box-shadow:var(--sh);cursor:pointer;transition:all .2s}
+.hist-card:hover{border-color:var(--gold-bd);transform:translateY(-1px)}
+.hist-card .hc-date{font-size:11px;color:var(--ink3);margin-bottom:4px}.hist-card .hc-name{font-size:16px;font-weight:600;margin-bottom:3px}
+.hist-card .hc-meta{font-size:12px;color:var(--ink2);display:flex;gap:12px;flex-wrap:wrap}
+.hist-empty{text-align:center;padding:3rem 1rem;color:var(--ink3);font-size:14px}
+.apikey-overlay{display:none;position:fixed;inset:0;background:rgba(20,18,16,.6);z-index:9999;align-items:center;justify-content:center}
+.apikey-overlay.open{display:flex}
+.apikey-modal{background:#fff;border-radius:var(--rlg);padding:2rem;max-width:480px;width:calc(100% - 2rem);box-shadow:0 24px 64px rgba(20,18,16,.25)}
+.apikey-modal h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px}
+.apikey-modal p{font-size:13px;color:var(--ink2);margin-bottom:1.25rem;line-height:1.6}
+.apikey-input-wrap{position:relative;margin-bottom:10px}
+.apikey-input-wrap input{width:100%;padding:11px 44px 11px 14px;border:1.5px solid var(--paper3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--paper);outline:none;transition:border-color .2s}
+.apikey-input-wrap input:focus{border-color:var(--gold);background:#fff}
+.apikey-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink3)}
+.apikey-hint{font-size:11px;color:var(--ink3);margin-bottom:1.25rem}
+.apikey-hint a{color:var(--gold);text-decoration:none;font-weight:600}
+.apikey-err{font-size:12px;color:var(--red);margin-bottom:10px;display:none}
+.apikey-saved{font-size:12px;color:var(--green);margin-bottom:10px;display:none}
+.apikey-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s}
+.apikey-status.set{background:var(--green-bg);color:var(--green)}.apikey-status.unset{background:var(--red-bg);color:var(--red)}
+.view{display:none}.view.on{display:block}
+@media print{.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;page-break-inside:avoid}.res-hdr{background:#141210!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.spanel{display:block!important}.stabs,.prog,.hdr-nav{display:none}}
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="apikey-overlay" id="apikey-overlay">
+  <div class="apikey-modal">
+    <h2>Chave da API</h2>
+    <p>Para usar o sistema fora do Claude.ai, você precisa de uma chave de API da Anthropic. Ela fica salva apenas no seu navegador (localStorage) e nunca é enviada para nenhum outro lugar.</p>
+    <div class="apikey-input-wrap">
+      <input type="password" id="apikey-input" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
+      <button class="apikey-toggle" onclick="toggleKeyVis()" id="apikey-eye">👁</button>
+    </div>
+    <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · ~R$ 0,20 por planejamento gerado</div>
+    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
+    <div class="apikey-saved" id="apikey-saved">✓ Chave salva com sucesso!</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-gold" onclick="saveKey()">Salvar chave</button>
+      <button class="btn btn-ghost" onclick="closeKeyModal()" id="apikey-cancel" style="display:none">Cancelar</button>
+      <button class="btn btn-ghost" onclick="removeKey()" id="apikey-remove" style="display:none;color:var(--red);border-color:#f5c6c2">Remover chave</button>
+    </div>
+  </div>
+</div>
+<div class="shell">
+<div class="hdr">
+  <div class="hdr-tag">Sistema de Produção</div>
+  <h1>Planejamento de <em>eventos</em></h1>
+  <p>Responda as perguntas e receba um planejamento completo gerado por IA</p>
+  <div class="hdr-nav no-print">
+    <button class="active-nav" onclick="showMain('form')">Novo evento</button>
+    <button onclick="showMain('hist')">Histórico</button>
+    <button onclick="showMain('supl')">Fornecedores</button>
+    <button onclick="window.open('dashboard_eventos.html','_blank')" style="background:var(--gold);color:var(--ink);border-color:var(--gold)">◈ Dashboard</button>
+    <button class="apikey-status unset" id="apikey-btn" onclick="openKeyModal()">🔑 API Key</button>
+  </div>
+</div>
+
+<div id="main-form">
+  <div class="prog no-print">
+    <button class="ps active" id="ps1" onclick="navTo(1)"><span class="sn">1</span>Tipo</button>
+    <button class="ps" id="ps2" onclick="navTo(2)"><span class="sn">2</span>Briefing</button>
+    <button class="ps" id="ps3" onclick="navTo(3)"><span class="sn">3</span>Formato</button>
+    <button class="ps" id="ps4" onclick="navTo(4)"><span class="sn">4</span>Estrutura</button>
+    <button class="ps" id="ps5"><span class="sn">5</span>Resultado</button>
+  </div>
+
+  <div class="view on" id="v1">
+    <div class="card">
+      <div class="card-title">Qual é o tipo do evento?</div>
+      <div class="card-sub">Selecione um ou mais tipos — você pode mesclar formatos</div>
+      <div class="hint-bar">Clique para selecionar ou desmarcar. Múltiplas seleções permitidas.</div>
+      <div class="sel-grid">
+        <button class="sel-btn" data-val="Corporativo" onclick="selT(this,'tipos')"><span class="sel-icon">🏢</span>Corporativo</button>
+        <button class="sel-btn" data-val="Celebrativo / Gala" onclick="selT(this,'tipos')"><span class="sel-icon">🏆</span>Celebrativo / Gala</button>
+        <button class="sel-btn" data-val="Educativo / Simpósio" onclick="selT(this,'tipos')"><span class="sel-icon">🎓</span>Educativo / Simpósio</button>
+        <button class="sel-btn" data-val="Casamento" onclick="selT(this,'tipos')"><span class="sel-icon">💍</span>Casamento</button>
+        <button class="sel-btn" data-val="Festa Social" onclick="selT(this,'tipos')"><span class="sel-icon">🎉</span>Festa Social</button>
+        <button class="sel-btn" data-val="Feira / Exposição" onclick="selT(this,'tipos')"><span class="sel-icon">🏛</span>Feira / Exposição</button>
+        <button class="sel-btn" data-val="Convenção / Congresso" onclick="selT(this,'tipos')"><span class="sel-icon">🎤</span>Convenção</button>
+        <button class="sel-btn" data-val="Lançamento de Produto" onclick="selT(this,'tipos')"><span class="sel-icon">🚀</span>Lançamento</button>
+        <button class="sel-btn" data-val="__outro__" onclick="selT(this,'tipos')"><span class="sel-icon">✨</span>Outro</button>
+      </div>
+      <div id="outro-tipo-f" class="field" style="display:none"><label>Descreva o tipo</label><input type="text" id="outro-tipo-v" placeholder="Ex: Festival de música..." oninput="rTags('tipos')"></div>
+      <div class="tags-wrap" id="tags-tipos"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-ink" id="btn1" onclick="goStep(2)" disabled>Continuar →</button></div>
+  </div>
+
+  <div class="view" id="v2">
+    <div class="card">
+      <div class="card-title">Briefing do evento</div>
+      <div class="card-sub">Quanto mais detalhe, melhor o planejamento gerado.</div>
+      <div class="row2">
+        <div class="field">
+          <label>Cliente — dono do evento</label>
+          <input type="text" id="f-cliente" placeholder="Ex: Instituto Myra Eliane, Empresa XYZ...">
+          <div class="fhint">Quem contratou / quem o evento representa</div>
+        </div>
+        <div class="field">
+          <label>Promotor — quem produz</label>
+          <input type="text" id="f-promotor" placeholder="Ex: Nome da sua produtora...">
+          <div class="fhint">Sua empresa ou nome como produtor</div>
+        </div>
+      </div>
+      <div class="field"><label>Descrição do evento</label><textarea id="f-desc" placeholder="Objetivo, contexto, data comemorativa, tema, mensagem central..."></textarea></div>
+      <div class="row2">
+        <div class="field"><label>Cidade / local</label><input type="text" id="f-city" placeholder="Ex: Fortaleza, CE"></div>
+        <div class="field"><label>Mês e ano previsto</label><input type="text" id="f-date" placeholder="Ex: Outubro de 2026" oninput="calcMonths(this.value)"></div>
+      </div>
+      <div class="field"><label>Público-alvo</label><input type="text" id="f-publico" placeholder="Ex: Parceiros, autoridades, colaboradores..."></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button><button class="btn btn-ink" onclick="goStep(3)">Continuar →</button></div>
+  </div>
+
+  <div class="view" id="v3">
+    <div class="card">
+      <div class="card-title">Qual é o formato do evento?</div>
+      <div class="card-sub">Selecione um ou mais formatos</div>
+      <div class="hint-bar">Múltiplas seleções são permitidas.</div>
+      <div class="fmt-opts">
+        <div class="fmt-opt" data-val="Íntimo e sofisticado — jantar/coquetel para grupos pequenos" onclick="selT(this,'fmts')"><div class="fmt-icon">🕯</div><div><div class="fmt-title">Íntimo e sofisticado</div><div class="fmt-desc">Jantar, coquetel, experiência curada para grupos pequenos</div></div></div>
+        <div class="fmt-opt" data-val="Celebrativo com palco — premiação, gala, vídeos e artista ao vivo" onclick="selT(this,'fmts')"><div class="fmt-icon">🎭</div><div><div class="fmt-title">Celebrativo com palco</div><div class="fmt-desc">Premiação, gala, vídeos institucionais e artista ao vivo</div></div></div>
+        <div class="fmt-opt" data-val="Educativo — palestra principal, painel de debates, conteúdo de alto nível" onclick="selT(this,'fmts')"><div class="fmt-icon">🎓</div><div><div class="fmt-title">Educativo / Simpósio</div><div class="fmt-desc">Palestra principal, painel de debates, alto nível</div></div></div>
+        <div class="fmt-opt" data-val="Convenção formal — auditório, grade de palestras, protocolo institucional" onclick="selT(this,'fmts')"><div class="fmt-icon">🏛</div><div><div class="fmt-title">Convenção formal</div><div class="fmt-desc">Auditório, grade de palestras, protocolo institucional</div></div></div>
+        <div class="fmt-opt" data-val="Festa e confraternização — celebração descontraída, DJ ou banda ao vivo" onclick="selT(this,'fmts')"><div class="fmt-icon">🎶</div><div><div class="fmt-title">Festa e confraternização</div><div class="fmt-desc">Celebração descontraída, DJ ou banda ao vivo</div></div></div>
+        <div class="fmt-opt" data-val="Feira ou exposição — estandes, público circulante, vitrine de produtos" onclick="selT(this,'fmts')"><div class="fmt-icon">🖼</div><div><div class="fmt-title">Feira ou exposição</div><div class="fmt-desc">Estandes, público circulante, vitrine de produtos</div></div></div>
+        <div class="fmt-opt" data-val="Híbrido — presencial com transmissão online simultânea" onclick="selT(this,'fmts')"><div class="fmt-icon">💻</div><div><div class="fmt-title">Híbrido (presencial + online)</div><div class="fmt-desc">Transmissão ao vivo para público remoto</div></div></div>
+        <div class="fmt-opt" data-val="__outro_fmt__" onclick="selT(this,'fmts')"><div class="fmt-icon">✨</div><div><div class="fmt-title">Outro formato</div><div class="fmt-desc">Descreva um formato personalizado</div></div></div>
+      </div>
+      <div id="outro-fmt-f" class="field" style="display:none;margin-top:4px"><label>Descreva o formato</label><input type="text" id="outro-fmt-v" placeholder="Ex: Walk dinner, imersivo..." oninput="rTags('fmts')"></div>
+      <div class="tags-wrap" id="tags-fmts"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button><button class="btn btn-ink" id="btn3" onclick="goStep(4)" disabled>Continuar →</button></div>
+  </div>
+
+  <div class="view" id="v4">
+    <div class="card">
+      <div class="card-title">Estrutura e orçamento</div>
+      <div class="card-sub">Insira os valores reais — aceita números quebrados</div>
+      <div class="field"><label>Número de convidados</label><div class="num-wrap"><input type="number" id="n-guests" min="1" max="999999" step="1" value="150" oninput="upN('guests')"><span class="num-disp" id="nd-guests">150 pessoas</span></div></div>
+      <div class="field"><label>Orçamento disponível (R$)</label><div class="num-wrap"><input type="number" id="n-budget" min="0" max="5000000" step="1" value="50000" oninput="upN('budget')"><span class="num-disp" id="nd-budget">R$ 50.000</span></div><div class="fhint">Aceita qualquer valor até R$ 5.000.000</div></div>
+      <div class="field"><label>Meses até o evento</label><div class="num-wrap"><input type="number" id="n-months" min="1" max="36" step="1" value="4" oninput="upN('months')"><span class="num-disp" id="nd-months">4 meses</span></div></div>
+      <div class="row2">
+        <div class="field"><label>Perfil do público</label><select id="f-perfil"><option value="">Selecione...</option><option>Executivos e empresários</option><option>Parceiros institucionais</option><option>Colaboradores internos</option><option>Clientes e convidados VIP</option><option>Público geral / misto</option><option>Autoridades e lideranças</option><option>Família e amigos</option></select></div>
+        <div class="field"><label>Tom do evento</label><select id="f-tom"><option value="">Selecione...</option><option>Sofisticado e elegante</option><option>Emocional e celebrativo</option><option>Formal e institucional</option><option>Descontraído e festivo</option><option>Inovador e moderno</option><option>Intimista e acolhedor</option></select></div>
+      </div>
+      <div class="field"><label>Detalhes especiais</label><textarea id="f-extra" placeholder="Artista ao vivo, tradução simultânea, celebra 10 anos..." style="min-height:70px"></textarea></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button><button class="btn btn-gold" onclick="generate()">✦ Gerar planejamento completo</button></div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="view" id="v-load">
+    <div class="card">
+      <div class="load-screen" id="load-screen">
+        <div class="load-title">Analisando todos os detalhes do evento e criando o seu planejamento</div>
+        <div class="load-prog-wrap">
+          <div class="load-prog-bar"><div class="load-prog-fill" id="prog-fill"></div></div>
+          <div class="load-prog-pct" id="prog-pct">0%</div>
+        </div>
+        <div class="load-steps" id="load-steps">
+          <div class="lstep" id="ls1"><div class="ldot" id="ld1"></div>Definindo conceito e identidade visual</div>
+          <div class="lstep" id="ls2"><div class="ldot" id="ld2"></div>Elaborando roteiro e momentos-chave</div>
+          <div class="lstep" id="ls3"><div class="ldot" id="ld3"></div>Planejando produção audiovisual</div>
+          <div class="lstep" id="ls4"><div class="ldot" id="ld4"></div>Montando cronograma de produção</div>
+          <div class="lstep" id="ls5"><div class="ldot" id="ld5"></div>Mapeando logística e fornecedores</div>
+          <div class="lstep" id="ls6"><div class="ldot" id="ld6"></div>Elaborando comunicação e estratégia</div>
+          <div class="lstep" id="ls7"><div class="ldot" id="ld7"></div>Calculando orçamento detalhado</div>
+          <div class="lstep" id="ls8"><div class="ldot" id="ld8"></div>Finalizando checklist e dicas</div>
+        </div>
+      </div>
+      <div class="load-done-screen" id="load-done">
+        <div class="load-check">✅</div>
+        <div class="load-done-title">Planejamento pronto!</div>
+        <div class="load-done-sub">Seu evento foi planejado com sucesso. Carregando resultado...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="v-result"><div id="res-out"></div></div>
+</div>
+
+<div id="main-hist" style="display:none">
+  <div class="card"><div class="card-title">Histórico de eventos</div><div class="card-sub">Todos os planejamentos gerados neste dispositivo</div><div id="hist-list"></div></div>
+</div>
+
+<div id="main-supl" style="display:none">
+  <div class="card"><div class="card-title">Base de fornecedores</div><div class="card-sub">Profissionais e empresas com estimativa de valores para Fortaleza, CE</div><div class="sup-cats" id="sup-cats"></div><div id="sup-panels"></div></div>
+</div>
+</div>
+
+<script>
+// ══ STATE ══════════════════════════════════════════════
+const S={tipos:[],fmts:[],cliente:'',promotor:'',desc:'',city:'',date:'',publico:'',guests:150,budget:50000,months:4,perfil:'',tom:'',extra:'',maxStep:1};
+let currentPlan=null;
+let sectionHistory={conceito:[],roteiro:[],audiovisual:[],producao:[],logistica:[],comunicacao:[],orcamento:[],checklist:[],dicas:[]};
+let budgetRows=[];
+
+// ══ SUPPLIERS ══════════════════════════════════════════
+const SUPPLIERS={
+  'Fotografia':[
+    {n:'Fotógrafo social (básico)',d:'Cobertura de eventos sociais, galeria editada em 72h',p:'R$ 800–1.500',obs:'Half day (até 4h)'},
+    {n:'Fotógrafo social (intermediário)',d:'Portfólio robusto, 2 entregas (full + seleção)',p:'R$ 1.500–3.000',obs:'Day use (8h)'},
+    {n:'Fotógrafo corporativo',d:'Experiência com eventos institucionais e corporativos',p:'R$ 2.000–4.500',obs:'Inclui alta res. para imprensa'},
+    {n:'Fotógrafo de moda/editorial',d:'Estética refinada, ideal para galas e eventos VIP',p:'R$ 3.500–7.000',obs:'Com assistente'},
+    {n:'Segundo fotógrafo (apoio)',d:'Cobertura simultânea de plateia e bastidores',p:'R$ 600–1.200',obs:'Por evento'},
+  ],
+  'Vídeo':[
+    {n:'Videógrafo (highlights)',d:'Vídeo de 2-3 min para redes sociais',p:'R$ 1.000–2.000',obs:'Entrega em 7 dias'},
+    {n:'Produtora audiovisual (básica)',d:'Cobertura + edição, 1 câmera',p:'R$ 2.000–4.000',obs:'Sem motion design'},
+    {n:'Produtora audiovisual (completa)',d:'2-3 câmeras, edição avançada, cor grading',p:'R$ 5.000–15.000',obs:'Inclui trilha e voz'},
+    {n:'Motion designer',d:'Animação de créditos, vinhetas e vídeos institucionais',p:'R$ 1.500–4.000',obs:'Por projeto'},
+    {n:'Streaming ao vivo',d:'Operação de live no YouTube/Instagram',p:'R$ 1.200–3.500',obs:'Inclui técnico e equipamento'},
+    {n:'Drone (filmagem aérea)',d:'Imagens e vídeos aéreos do evento',p:'R$ 800–2.000',obs:'Requer autorização ANAC'},
+  ],
+  'Beleza':[
+    {n:'Maquiadora (social)',d:'Maquiagem para evento social',p:'R$ 250–500',obs:'Por pessoa'},
+    {n:'Maquiadora (noiva)',d:'Make noiva + teste prévio',p:'R$ 600–1.500',obs:'Inclui teste'},
+    {n:'Maquiadora artística',d:'Make editorial, temática ou artística',p:'R$ 500–1.200',obs:'Por pessoa'},
+    {n:'Cabeleireira (penteado social)',d:'Penteado para evento, inclui finalização',p:'R$ 200–500',obs:'Por pessoa'},
+    {n:'Cabeleireira (noiva)',d:'Penteado + teste prévio para noiva',p:'R$ 500–1.200',obs:'Inclui teste'},
+    {n:'Equipe de beleza (pacote)',d:'Maquiagem + cabelo para equipe do evento',p:'R$ 1.500–4.000',obs:'Até 5 pessoas'},
+  ],
+  'Moda / Figurino':[
+    {n:'Personal stylist',d:'Consultoria de imagem e montagem de looks',p:'R$ 300–800',obs:'Por sessão'},
+    {n:'Costureira (ajustes)',d:'Ajustes em peças prontas, bainhas e consertos',p:'R$ 80–300',obs:'Por peça'},
+    {n:'Costureira (sob medida)',d:'Confecção de peças exclusivas',p:'R$ 500–3.000',obs:'Por peça, depende do modelo'},
+    {n:'Figurinista',d:'Criação e coordenação de figurinos para equipe',p:'R$ 1.500–4.000',obs:'Por projeto'},
+    {n:'Aluguel de trajes (masculino)',d:'Smoking, terno ou fantasia',p:'R$ 200–600',obs:'Por peça'},
+    {n:'Aluguel de trajes (feminino)',d:'Vestido de gala, fantasia ou traje temático',p:'R$ 250–800',obs:'Por peça'},
+  ],
+  'Decoração':[
+    {n:'Decoradora (básica)',d:'Decoração simples, flores e tecidos',p:'R$ 1.500–4.000',obs:'Até 100 pax'},
+    {n:'Decoradora (intermediária)',d:'Projeto personalizado com backdrop e florais',p:'R$ 4.000–10.000',obs:'Até 200 pax'},
+    {n:'Decoradora (premium)',d:'Cenografia completa com instalações',p:'R$ 10.000–30.000',obs:'200+ pax'},
+    {n:'Floricultura / arranjos',d:'Arranjos de mesa e ambientação floral',p:'R$ 1.000–8.000',obs:'Depende da quantidade'},
+    {n:'Tapete e fotocall',d:'Tapete personalizado + backdrop para fotos',p:'R$ 800–2.500',obs:'Inclui montagem'},
+    {n:'Iluminação decorativa (LED)',d:'Iluminação de ambiente e instalações',p:'R$ 1.200–4.000',obs:'Por evento'},
+  ],
+  'Buffet / Alimentação':[
+    {n:'Buffet (básico)',d:'Coffee break ou coquetel simples',p:'R$ 35–60/pax',obs:'Por pessoa'},
+    {n:'Buffet (intermediário)',d:'Coquetel completo com finger foods e quentes',p:'R$ 60–120/pax',obs:'Por pessoa'},
+    {n:'Buffet (premium)',d:'Jantar completo com serviço à francesa',p:'R$ 120–250/pax',obs:'Por pessoa'},
+    {n:'Barman / open bar',d:'Serviço de bebidas com bartender',p:'R$ 1.500–5.000',obs:'Por evento'},
+    {n:'Doceria / candy bar',d:'Mesa de doces e sobremesas personalizadas',p:'R$ 800–3.000',obs:'Para 100 pessoas'},
+    {n:'Food truck',d:'Praça de alimentação temática',p:'R$ 1.500–4.000',obs:'Por unidade'},
+  ],
+  'Som e Luz':[
+    {n:'Sonorização básica',d:'PA para até 150 pessoas, microfone e monitor',p:'R$ 800–2.000',obs:'Half day'},
+    {n:'Sonorização profissional',d:'Sistema PA completo para 300+ pessoas',p:'R$ 2.500–6.000',obs:'Com técnico'},
+    {n:'Iluminação cênica (show)',d:'Moving heads, PAR LED, controle DMX',p:'R$ 2.000–8.000',obs:'Com técnico e montagem'},
+    {n:'DJ profissional',d:'DJ com equipamento completo',p:'R$ 1.500–5.000',obs:'4-6 horas'},
+    {n:'Banda (trio)',d:'Banda ao vivo com 3 integrantes',p:'R$ 3.000–8.000',obs:'3-4 horas'},
+    {n:'Banda (completa)',d:'Banda com 5+ músicos, palco completo',p:'R$ 8.000–25.000',obs:'Com rider incluso'},
+    {n:'Artista solo / cantor',d:'Apresentação solo com backing track ou banda',p:'R$ 3.000–20.000',obs:'Depende do artista'},
+  ],
+  'Produção':[
+    {n:'Produtor executivo',d:'Gestão completa do evento',p:'R$ 5.000–15.000',obs:'Por projeto'},
+    {n:'Assistente de produção',d:'Apoio operacional no dia do evento',p:'R$ 300–600',obs:'Por dia'},
+    {n:'Mestre de cerimônias (MC)',d:'Condução do roteiro e apresentação',p:'R$ 1.500–5.000',obs:'Por evento'},
+    {n:'Recepcionista/hostess',d:'Recepção, credenciamento e atendimento',p:'R$ 200–400',obs:'Por pessoa/dia'},
+    {n:'Segurança (por profissional)',d:'Controle de acesso e segurança interna',p:'R$ 300–600',obs:'Por profissional/dia'},
+    {n:'Assessoria de imprensa',d:'Release, contato com veículos e cobertura',p:'R$ 1.500–5.000',obs:'Por evento'},
+    {n:'Designer gráfico',d:'Identidade visual, convites, banners',p:'R$ 800–3.000',obs:'Por projeto'},
+    {n:'Gráfica / impressão',d:'Impressão de banners, backdrop, convites e crachás',p:'R$ 500–3.000',obs:'Depende da tiragem'},
+  ],
+  'Espaço':[
+    {n:'Espaço de eventos (pequeno)',d:'Até 100 pax, básico',p:'R$ 1.500–4.000',obs:'Por evento'},
+    {n:'Espaço de eventos (médio)',d:'100-250 pax, com infraestrutura',p:'R$ 4.000–12.000',obs:'Por evento'},
+    {n:'Salão de hotel (médio)',d:'150-300 pax com serviços',p:'R$ 8.000–20.000',obs:'Inclui coffee básico'},
+    {n:'Espaço premium / rooftop',d:'Local exclusivo, até 200 pax',p:'R$ 10.000–30.000',obs:'Por evento'},
+    {n:'Centro de eventos',d:'300+ pax, palco e estrutura completa',p:'R$ 15.000–60.000',obs:'Por evento'},
+    {n:'Espaço ao ar livre',d:'Chácara, garden ou área externa',p:'R$ 3.000–15.000',obs:'Inclui tendas'},
+  ],
+};
+
+// ══ MULTI-SELECT ════════════════════════════════════════
+function labelOf(v){
+  if(v==='__outro__') return document.getElementById('outro-tipo-v').value||'Outro tipo';
+  if(v==='__outro_fmt__') return document.getElementById('outro-fmt-v').value||'Outro formato';
+  return v;
+}
+function selT(el,key){
+  const v=el.dataset.val,arr=S[key],i=arr.indexOf(v);
+  if(i===-1){arr.push(v);el.classList.add('on');}else{arr.splice(i,1);el.classList.remove('on');}
+  if(key==='tipos'){document.getElementById('outro-tipo-f').style.display=arr.includes('__outro__')?'block':'none';rTags('tipos');document.getElementById('btn1').disabled=arr.length===0;}
+  if(key==='fmts'){document.getElementById('outro-fmt-f').style.display=arr.includes('__outro_fmt__')?'block':'none';rTags('fmts');document.getElementById('btn3').disabled=arr.length===0;}
+}
+// Map to store tag values safely — avoids JSON.stringify inside onclick attributes
+const _tagMap={};
+function rTags(key){
+  const arr=S[key],el=document.getElementById('tags-'+key);
+  if(!el)return;
+  el.innerHTML=arr.map((v,i)=>{
+    const mapKey=key+'_'+i+'_'+Date.now();
+    _tagMap[mapKey]=v;
+    return `<span class="stag">${labelOf(v)}<button class="stag-rm" onclick="rmTag('${mapKey}','${key}')">×</button></span>`;
+  }).join('');
+}
+function rmTag(mapKey,key){
+  // Resolve the actual value from the map
+  const v=_tagMap[mapKey];
+  if(v===undefined)return;
+  delete _tagMap[mapKey];
+  const arr=S[key],i=arr.indexOf(v);if(i!==-1)arr.splice(i,1);
+  document.querySelectorAll('[data-val]').forEach(btn=>{if(btn.dataset.val===v)btn.classList.remove('on');});
+  if(key==='tipos'){if(v==='__outro__')document.getElementById('outro-tipo-f').style.display='none';rTags('tipos');document.getElementById('btn1').disabled=arr.length===0;}
+  if(key==='fmts'){if(v==='__outro_fmt__')document.getElementById('outro-fmt-f').style.display='none';rTags('fmts');document.getElementById('btn3').disabled=arr.length===0;}
+}
+
+// ══ NUMBERS ════════════════════════════════════════════
+function upN(k){
+  const v=parseFloat(document.getElementById('n-'+k).value)||0;S[k]=v;
+  if(k==='guests')document.getElementById('nd-guests').textContent=v.toLocaleString('pt-BR')+' pessoas';
+  if(k==='budget')document.getElementById('nd-budget').textContent='R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
+  if(k==='months')document.getElementById('nd-months').textContent=v+(v===1?' mês':' meses');
+}
+
+// Auto-calculate months from typed date
+const MONTHS_PT={'janeiro':0,'fevereiro':1,'março':2,'marco':2,'abril':3,'maio':4,'junho':5,'julho':6,'agosto':7,'setembro':8,'outubro':9,'novembro':10,'dezembro':11,'jan':0,'fev':1,'mar':2,'abr':3,'mai':4,'jun':5,'jul':6,'ago':7,'set':8,'out':9,'nov':10,'dez':11};
+function calcMonths(val){
+  if(!val||val.trim().length<4)return;
+  const txt=val.toLowerCase().trim();
+  let targetDate=null;
+  // Try "Outubro de 2026" or "outubro 2026" or "10/2026"
+  const yearMatch=txt.match(/\b(20\d{2})\b/);
+  if(!yearMatch)return;
+  const year=parseInt(yearMatch[1]);
+  // Find month name
+  let month=-1;
+  for(const[name,idx] of Object.entries(MONTHS_PT)){if(txt.includes(name)){month=idx;break;}}
+  // Try numeric month like "10/2026" or "10-2026"
+  if(month===-1){const mMatch=txt.match(/\b(0?[1-9]|1[0-2])[\/\-](20\d{2})\b/);if(mMatch)month=parseInt(mMatch[1])-1;}
+  if(month===-1||year<2024)return;
+  targetDate=new Date(year,month,1);
+  const now=new Date();
+  const nowY=now.getFullYear(),nowM=now.getMonth();
+  const diff=(targetDate.getFullYear()-nowY)*12+(targetDate.getMonth()-nowM);
+  if(diff<=0||diff>60)return;
+  // Update the months field
+  const inp=document.getElementById('n-months');
+  const disp=document.getElementById('nd-months');
+  if(inp&&disp){
+    inp.value=diff;S.months=diff;
+    disp.textContent=diff+(diff===1?' mês':' meses');
+    disp.style.color='var(--green)';
+    setTimeout(()=>{if(disp)disp.style.color='var(--gold)';},2000);
+  }
+}
+
+// ══ NAV ════════════════════════════════════════════════
+function setProg(n){for(let i=1;i<=5;i++){const el=document.getElementById('ps'+i);if(!el)continue;el.classList.remove('active','done');if(i<n)el.classList.add('done');else if(i===n)el.classList.add('active');}}
+function showVw(id){document.querySelectorAll('#main-form .view').forEach(v=>v.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
+function goStep(n){if(n>S.maxStep)S.maxStep=n;setProg(n);showVw('v'+n);}
+function navTo(n){if(n>S.maxStep||n===5)return;setProg(n);showVw('v'+n);}
+function showMain(w){
+  document.getElementById('main-form').style.display=w==='form'?'block':'none';
+  document.getElementById('main-hist').style.display=w==='hist'?'block':'none';
+  document.getElementById('main-supl').style.display=w==='supl'?'block':'none';
+  document.querySelectorAll('.hdr-nav button').forEach((b,i)=>b.classList.toggle('active-nav',['form','hist','supl'][i]===w));
+  if(w==='hist')renderHistory();if(w==='supl')renderSuppliers();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══ LOADING ANIMATION (8 steps) ══════════════════════
+let lTimer=null,lStep=0;
+const TOTAL_STEPS=8;
+function setLStep(i,cls,check){
+  const el=document.getElementById('ls'+i);
+  const dot=document.getElementById('ld'+i);
+  if(el)el.className=cls;
+  if(dot)dot.textContent=check||'';
+}
+function startLoad(){
+  const sc=document.getElementById('load-screen');
+  const dn=document.getElementById('load-done');
+  if(sc)sc.style.display='block';
+  if(dn)dn.style.display='none';
+  for(let i=1;i<=TOTAL_STEPS;i++)setLStep(i,'lstep','');
+  setProgFill(0);lStep=0;
+  lTimer=setInterval(()=>{
+    if(lStep>0)setLStep(lStep,'lstep done','✓');
+    lStep++;
+    if(lStep<=TOTAL_STEPS){
+      setLStep(lStep,'lstep active','');
+      setProgFill(Math.round((lStep/TOTAL_STEPS)*85));
+    }
+  },1500);
+}
+function setProgFill(pct){
+  const f=document.getElementById('prog-fill');
+  const p=document.getElementById('prog-pct');
+  if(f)f.style.width=pct+'%';
+  if(p)p.textContent=pct+'%';
+}
+function endLoad(cb){
+  clearInterval(lTimer);lTimer=null;
+  for(let i=1;i<=TOTAL_STEPS;i++)setLStep(i,'lstep done','✓');
+  setProgFill(100);
+  setTimeout(()=>{
+    const sc=document.getElementById('load-screen');
+    const dn=document.getElementById('load-done');
+    if(sc)sc.style.display='none';
+    if(dn)dn.style.display='block';
+    setTimeout(()=>{if(cb)cb();},1400);
+  },400);
+}
+
+// ══ API KEY MANAGEMENT ════════════════════════════════
+function getKey(){return localStorage.getItem('anthropic_key')||'';}
+function updateKeyBtn(){
+  const k=getKey();
+  const btn=document.getElementById('apikey-btn');
+  if(!btn)return;
+  if(k){btn.textContent='🔑 API Key ✓';btn.className='apikey-status set';}
+  else{btn.textContent='🔑 API Key';btn.className='apikey-status unset';}
+}
+function openKeyModal(){
+  const k=getKey();
+  document.getElementById('apikey-input').value=k||'';
+  document.getElementById('apikey-err').style.display='none';
+  document.getElementById('apikey-saved').style.display='none';
+  document.getElementById('apikey-cancel').style.display=k?'inline-flex':'none';
+  document.getElementById('apikey-remove').style.display=k?'inline-flex':'none';
+  document.getElementById('apikey-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('apikey-input').focus(),100);
+}
+function closeKeyModal(){document.getElementById('apikey-overlay').classList.remove('open');}
+function toggleKeyVis(){const inp=document.getElementById('apikey-input');inp.type=inp.type==='password'?'text':'password';}
+function saveKey(){
+  const val=document.getElementById('apikey-input').value.trim();
+  const errEl=document.getElementById('apikey-err');
+  const okEl=document.getElementById('apikey-saved');
+  if(!val.startsWith('sk-ant-')&&val!==''){errEl.style.display='block';okEl.style.display='none';return;}
+  errEl.style.display='none';
+  localStorage.setItem('anthropic_key',val);
+  okEl.style.display='block';
+  updateKeyBtn();
+  setTimeout(()=>closeKeyModal(),1200);
+}
+function removeKey(){
+  localStorage.removeItem('anthropic_key');
+  document.getElementById('apikey-input').value='';
+  document.getElementById('apikey-remove').style.display='none';
+  document.getElementById('apikey-cancel').style.display='none';
+  document.getElementById('apikey-saved').style.display='none';
+  updateKeyBtn();
+}
+// Close modal on overlay click
+document.getElementById('apikey-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('apikey-overlay'))closeKeyModal();});
+
+// ══ API CALL HELPER ════════════════════════════════════
+function getHeaders(){
+  const key=getKey();
+  if(key) return{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'};
+  // Running inside claude.ai — use browser access header
+  return{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'};
+}
+async function callAI(prompt,maxTok=4000){
+  if(!getKey()&&!window.location.href.includes('claude.ai')){
+    throw new Error('Chave de API não configurada. Clique em "🔑 API Key" para adicionar sua chave.');
+  }
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTok,messages:[{role:'user',content:prompt}]})});
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'HTTP '+r.status);}
+  const d=await r.json();
+  if(d.stop_reason==='max_tokens'){throw new Error('Resposta cortada pelo limite de tokens. Tente novamente.');}
+  const raw=d.content.filter(x=>x.type==='text').map(x=>x.text).join('').trim();
+  const clean=raw.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+  if(!clean)throw new Error('Resposta vazia da API.');
+  try{return JSON.parse(clean);}catch(e){throw new Error('Erro ao processar resposta da IA. Tente novamente.');}
+}
+
+// ══ GENERATE (3 sequential calls to avoid race issues) ═
+async function generate(){
+  S.cliente=document.getElementById('f-cliente').value.trim();
+  S.promotor=document.getElementById('f-promotor').value.trim();
+  S.desc=document.getElementById('f-desc').value.trim();
+  S.city=document.getElementById('f-city').value.trim();
+  S.date=document.getElementById('f-date').value.trim();
+  S.publico=document.getElementById('f-publico').value.trim();
+  S.perfil=document.getElementById('f-perfil').value;
+  S.tom=document.getElementById('f-tom').value;
+  S.extra=document.getElementById('f-extra').value.trim();
+  S.maxStep=5;setProg(5);showVw('v-load');startLoad();
+
+  const tipos=S.tipos.map(v=>labelOf(v)).join(' + ');
+  const fmts=S.fmts.map(v=>labelOf(v)).join(' + ');
+  const ctx=`TIPO: ${tipos} | CLIENTE: ${S.cliente||'N/A'} | PROMOTOR: ${S.promotor||'N/A'} | DESC: ${S.desc||'N/A'} | CIDADE: ${S.city||'N/A'} | DATA: ${S.date||'N/A'} | PÚBLICO: ${S.publico||'N/A'} | FORMATO: ${fmts} | CONVIDADOS: ${S.guests} | ORÇAMENTO: R$${S.budget} | MESES: ${S.months} | PERFIL: ${S.perfil||'N/A'} | TOM: ${S.tom||'N/A'} | EXTRAS: ${S.extra||'N/A'}`;
+
+  // CALL 1: Conceito + Roteiro + Nomes  (max 2500 tokens — pequeno, seguro)
+  const p1=`Você é um produtor de eventos experiente no Brasil. Com base neste briefing, gere a parte 1 do planejamento.
+BRIEFING: ${ctx}
+Responda SOMENTE com JSON válido, sem nenhum texto antes ou depois, sem markdown:
+{"nome_evento":"um nome criativo para o evento","tipo_display":"tipo resumido","conceito":"conceito em 2 frases curtas","identidade_visual":"estilo visual em 2 frases curtas","nomes":["Nome 1","Nome 2","Nome 3","Nome 4","Nome 5"],"roteiro":[{"tag":"Abertura","tempo":"19h00-19h30","titulo":"Titulo do momento","desc":"Descrição em 1 frase"}]}
+REGRAS: roteiro com exatamente 7 momentos, horários reais adaptados ao tipo de evento, descrições curtas de 1 frase cada.`;
+
+  // CALL 2: Audiovisual + Produção + Logística  (max 4000 tokens — mais denso)
+  const p2=`Você é um produtor de eventos experiente no Brasil. Com base neste briefing, gere a parte 2 do planejamento.
+BRIEFING: ${ctx}
+Responda SOMENTE com JSON válido, sem nenhum texto antes ou depois, sem markdown:
+{"audiovisual":{"intro":"intro em 1 frase","pecas":[{"nome":"nome","duracao":"duração","prazo":"prazo","desc":"desc em 1 frase"}],"equipe":"equipe resumida","equipamentos":"equipamentos resumidos"},"producao":[{"fase":"nome da fase","prazo":"X meses antes","acoes":["ação 1","ação 2","ação 3"]}],"logistica":{"fornecedores":[{"nome":"nome","det":"detalhe em 1 frase","badge":"prazo"}],"equipe_dia":["cargo (qtd)"]}}
+REGRAS: audiovisual com 4 peças; producao com 6 fases tendo 3 ações cada; logistica com 7 fornecedores e 6 itens de equipe.`;
+
+  // CALL 3: Comunicação + Orçamento + Checklist + Dicas  (max 3500 tokens)
+  const p3=`Você é um produtor de eventos experiente no Brasil. Com base neste briefing, gere a parte 3 do planejamento.
+BRIEFING: ${ctx}
+Responda SOMENTE com JSON válido, sem nenhum texto antes ou depois, sem markdown:
+{"comunicacao":{"estrategia":"estrategia em 2 frases","acoes":[{"fase":"fase","acoes":["ação 1","ação 2"]}],"canais":"canais resumidos"},"orcamento":[{"cat":"categoria","pct":15,"desc":"desc curta"}],"checklist":[{"grupo":"grupo","itens":["item 1","item 2","item 3","item 4"]}],"dicas":["dica 1","dica 2","dica 3","dica 4"]}
+REGRAS CRÍTICAS: comunicacao com exatamente 5 fases (2 ações cada); orcamento com EXATAMENTE 7 categorias cujos pct somam EXATAMENTE 100 (use apenas números inteiros); checklist com exatamente 5 grupos de 4 itens cada; dicas: exatamente 4 frases curtas e práticas.`;
+
+  try{
+    // Run in parallel — each call is now small enough not to overflow
+    const[d1,d2,d3]=await Promise.all([
+      callAI(p1,2500),
+      callAI(p2,4000),
+      callAI(p3,3500)
+    ]);
+    const plan={...d1,...d2,...d3};
+    currentPlan=plan;
+    sectionHistory={conceito:[],roteiro:[],audiovisual:[],producao:[],logistica:[],comunicacao:[],orcamento:[],checklist:[],dicas:[]};
+    saveToHistory(plan);
+    endLoad(()=>renderResult(plan));
+  }catch(e){
+    // Stop animation and hide loading screen
+    clearInterval(lTimer);
+    document.getElementById('load-screen').style.display='block';
+    document.getElementById('load-done').style.display='none';
+    showVw('v4');setProg(4);
+    document.querySelectorAll('.err').forEach(x=>x.remove());
+    const errDiv=document.createElement('div');errDiv.className='err';
+    errDiv.textContent='Erro ao gerar: '+e.message;
+    document.getElementById('v4').prepend(errDiv);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+}
+
+// ══ HISTORY ═══════════════════════════════════════════
+function saveToHistory(plan){
+  try{
+    const hist=JSON.parse(localStorage.getItem('evt_hist')||'[]');
+    hist.unshift({id:Date.now(),date:new Date().toLocaleString('pt-BR'),name:plan.nome_evento,tipo:plan.tipo_display||'',city:S.city,guests:S.guests,budget:S.budget,plan:JSON.stringify(plan),state:JSON.stringify(S)});
+    if(hist.length>30)hist.pop();
+    localStorage.setItem('evt_hist',JSON.stringify(hist));
+  }catch(e){}
+}
+function renderHistory(){
+  const hist=JSON.parse(localStorage.getItem('evt_hist')||'[]');
+  const el=document.getElementById('hist-list');
+  if(!hist.length){el.innerHTML='<div class="hist-empty">Nenhum evento gerado ainda.</div>';return;}
+  el.innerHTML=hist.map((h,i)=>`<div class="hist-card" onclick="loadFromHistory(${i})"><div class="hc-date">${h.date}</div><div class="hc-name">${h.name}</div><div class="hc-meta"><span>${h.tipo}</span>${h.city?`<span>📍 ${h.city}</span>`:''}<span>👥 ${(h.guests||0).toLocaleString('pt-BR')}</span><span>💰 R$ ${(h.budget||0).toLocaleString('pt-BR')}</span></div></div>`).join('');
+}
+function loadFromHistory(i){
+  try{
+    const hist=JSON.parse(localStorage.getItem('evt_hist')||'[]');
+    const h=hist[i];if(!h)return;
+    Object.assign(S,JSON.parse(h.state));
+    currentPlan=JSON.parse(h.plan);
+    sectionHistory={conceito:[],roteiro:[],audiovisual:[],producao:[],logistica:[],comunicacao:[],orcamento:[],checklist:[],dicas:[]};
+    showMain('form');S.maxStep=5;setProg(5);showVw('v-result');renderResult(currentPlan);
+  }catch(e){alert('Erro ao carregar: '+e.message);}
+}
+
+// ══ SUPPLIERS ════════════════════════════════════════
+function renderSuppliers(){
+  const cats=Object.keys(SUPPLIERS);
+  document.getElementById('sup-cats').innerHTML=cats.map((c,i)=>`<button class="sup-cat${i===0?' on':''}" onclick="swSupCat(${i})">${c}</button>`).join('');
+  document.getElementById('sup-panels').innerHTML=cats.map((c,i)=>`<div class="sup-panel${i===0?' on':''}" id="supp${i}"><table class="sup-table"><thead><tr><th>Profissional</th><th>Descrição</th><th>Estimativa</th><th>Obs.</th></tr></thead><tbody>${SUPPLIERS[c].map(s=>`<tr><td><div class="sup-name">${s.n}</div></td><td><div class="sup-desc">${s.d}</div></td><td><span class="sup-price">${s.p}</span></td><td><span class="sup-note">${s.obs}</span></td></tr>`).join('')}</tbody></table></div>`).join('');
+}
+function swSupCat(i){document.querySelectorAll('.sup-cat').forEach((b,j)=>b.classList.toggle('on',j===i));document.querySelectorAll('.sup-panel').forEach((p,j)=>p.classList.toggle('on',j===i));}
+
+// ══ BUDGET ENGINE ═════════════════════════════════════
+function initBudget(rows){budgetRows=rows.map((r,i)=>({id:i,cat:r.cat,pct:r.pct,desc:r.desc}));renderBudgetTable();}
+function renderBudgetTable(){
+  const bud=S.budget;
+  const total=budgetRows.reduce((s,r)=>s+r.pct,0);
+  const w=document.getElementById('bud-warn'),ok=document.getElementById('bud-ok');
+  if(w&&ok){if(total!==100){w.style.display='block';w.textContent=`Total atual: ${total}% — faltam ${100-total}% para fechar`;ok.style.display='none';}else{w.style.display='none';ok.style.display='block';}}
+  const tb=document.getElementById('bud-tbody');if(!tb)return;
+  tb.innerHTML=budgetRows.map(r=>`<tr id="br-${r.id}">
+    <td><input type="text" value="${r.cat}" style="width:100%;padding:5px 8px;border:1.5px solid var(--paper3);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--paper)" onchange="upBR(${r.id},'cat',this.value)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--paper3)'"></td>
+    <td style="width:70px"><input type="number" value="${r.pct}" min="0" max="100" step="1" oninput="upBR(${r.id},'pct',+this.value)"></td>
+    <td style="width:130px"><input type="number" value="${Math.round(bud*r.pct/100)}" min="0" oninput="upBRval(${r.id},+this.value)"></td>
+    <td class="row-val">R$ ${Math.round(bud*r.pct/100).toLocaleString('pt-BR')}</td>
+    <td><button class="row-del" onclick="delBR(${r.id})">×</button></td>
+  </tr>`).join('');
+  const totDisp=document.getElementById('bud-total-display');
+  const pctDisp=document.getElementById('bud-pct-display');
+  if(totDisp)totDisp.textContent='R$ '+bud.toLocaleString('pt-BR');
+  if(pctDisp)pctDisp.textContent=total+'%';
+}
+function upBR(id,f,v){const r=budgetRows.find(x=>x.id===id);if(r){r[f]=f==='pct'?Math.min(100,Math.max(0,v)):v;renderBudgetTable();}}
+function upBRval(id,v){const bud=S.budget;if(bud)upBR(id,'pct',Math.round((v/bud)*100));}
+function delBR(id){budgetRows=budgetRows.filter(x=>x.id!==id);renderBudgetTable();}
+function addBudRow(){const id=Date.now();budgetRows.push({id,cat:'Novo item',pct:0,desc:''});renderBudgetTable();setTimeout(()=>{const el=document.querySelector(`#br-${id} input`);if(el){el.focus();el.select();}},100);}
+
+// ══ SECTION HISTORY ═══════════════════════════════════
+function addToSecHist(sec,data){
+  if(!sectionHistory[sec])sectionHistory[sec]=[];
+  // Store a human-readable snapshot of the section
+  sectionHistory[sec].unshift({date:new Date().toLocaleTimeString('pt-BR'),data});
+  renderSecHist(sec);
+}
+
+function formatHistEntry(sec,data){
+  // Convert raw JSON data into readable HTML for history display
+  try{
+    const d=typeof data==='string'?JSON.parse(data):data;
+    const lines=[];
+    // Conceito
+    if(d.conceito)lines.push(`<b>Conceito:</b> ${d.conceito}`);
+    if(d.identidade_visual)lines.push(`<b>Identidade visual:</b> ${d.identidade_visual}`);
+    if(d.nomes)lines.push(`<b>Nomes sugeridos:</b> ${d.nomes.join(' · ')}`);
+    // Roteiro
+    if(d.roteiro)d.roteiro.forEach(r=>lines.push(`<b>${r.tempo}</b> [${r.tag}] ${r.titulo} — ${r.desc}`));
+    // Audiovisual
+    if(d.intro)lines.push(`<b>Intro:</b> ${d.intro}`);
+    if(d.pecas)d.pecas.forEach(p=>lines.push(`<b>${p.nome}</b> (${p.duracao}) — ${p.desc}`));
+    if(d.equipe)lines.push(`<b>Equipe:</b> ${d.equipe}`);
+    if(d.equipamentos)lines.push(`<b>Equipamentos:</b> ${d.equipamentos}`);
+    // audiovisual wrapped
+    if(d.audiovisual){
+      if(d.audiovisual.intro)lines.push(`<b>Intro:</b> ${d.audiovisual.intro}`);
+      if(d.audiovisual.pecas)d.audiovisual.pecas.forEach(p=>lines.push(`<b>${p.nome}</b> (${p.duracao}) — ${p.desc}`));
+    }
+    // Producao
+    if(d.producao)d.producao.forEach(f=>lines.push(`<b>${f.fase}</b> (${f.prazo}): ${(f.acoes||[]).join('; ')}`));
+    // Logistica
+    if(d.logistica){
+      if(d.logistica.fornecedores)d.logistica.fornecedores.forEach(f=>lines.push(`<b>${f.nome}</b> — ${f.det} [${f.badge}]`));
+      if(d.logistica.equipe_dia)lines.push(`<b>Equipe:</b> ${d.logistica.equipe_dia.join(', ')}`);
+    }
+    // Comunicacao
+    if(d.comunicacao){
+      if(d.comunicacao.estrategia)lines.push(`<b>Estratégia:</b> ${d.comunicacao.estrategia}`);
+      if(d.comunicacao.acoes)d.comunicacao.acoes.forEach(a=>lines.push(`<b>${a.fase}:</b> ${(a.acoes||[]).join('; ')}`));
+      if(d.comunicacao.canais)lines.push(`<b>Canais:</b> ${d.comunicacao.canais}`);
+    }
+    // Checklist
+    if(d.checklist)d.checklist.forEach(g=>lines.push(`<b>${g.grupo}:</b> ${(g.itens||[]).join(' · ')}`));
+    // Dicas
+    if(d.dicas)d.dicas.forEach((tip,i)=>lines.push(`<b>Dica ${i+1}:</b> ${tip}`));
+    // Orcamento
+    if(d.orcamento)d.orcamento.forEach(o=>lines.push(`<b>${o.cat}:</b> ${o.pct}% — ${o.desc}`));
+    return lines.length?lines.join('<br>'):String(data);
+  }catch(e){
+    return String(data);
+  }
+}
+
+function renderSecHist(sec){
+  const el=document.getElementById('sh-'+sec);if(!el)return;
+  const arr=sectionHistory[sec]||[];
+  if(!arr.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="hist-box">
+    <div class="hist-header" onclick="this.nextElementSibling.classList.toggle('open')">
+      Versões anteriores (${arr.length}) <span>▾</span>
+    </div>
+    <div class="hist-body">
+      ${arr.map((h,i)=>`
+        <div class="hist-entry">
+          <div class="hist-date">Versão ${arr.length-i} — salva às ${h.date}</div>
+          <div class="hist-full">${formatHistEntry(sec,h.data)}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ══ SMART REGEN ═══════════════════════════════════════
+// Builds a surgical prompt based on what the user typed.
+// Instead of always regenerating the whole section, it detects
+// what the user wants (e.g. "só os nomes") and generates only that.
+
+function buildRegenPrompt(sec, note, ctx){
+  const n = note.trim().toLowerCase();
+  const evCtx = `EVENTO: ${ctx}`;
+
+  // ── CONCEITO ──────────────────────────────────────────
+  if(sec==='conceito'){
+    // Detect if user wants only names
+    const onlyNames = n && (n.includes('nome') || n.includes('sugestão') || n.includes('sugest'));
+    // Detect if user wants only concept text
+    const onlyConcept = n && (n.includes('conceito') || n.includes('identidade') || n.includes('visual') || n.includes('tom'));
+
+    if(onlyNames){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE 5 novos nomes criativos para o evento.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON (sem texto fora, sem markdown):
+{"nomes":["Nome 1","Nome 2","Nome 3","Nome 4","Nome 5"]}`,
+        fields:['nomes']
+      };
+    }
+    if(onlyConcept){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE o conceito e identidade visual do evento.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON (sem texto fora, sem markdown):
+{"conceito":"escreva o conceito em 2 frases","identidade_visual":"escreva a identidade visual em 2 frases"}`,
+        fields:['conceito','identidade_visual']
+      };
+    }
+    // Default: regenerate all of conceito
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Regenere o conceito completo do evento.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Nova versão criativa'}
+Responda SOMENTE este JSON (sem texto fora, sem markdown):
+{"conceito":"escreva o conceito em 2 frases","identidade_visual":"escreva a identidade visual em 2 frases","nomes":["Nome 1","Nome 2","Nome 3","Nome 4","Nome 5"]}`,
+      fields:['conceito','identidade_visual','nomes']
+    };
+  }
+
+  // ── ROTEIRO ───────────────────────────────────────────
+  if(sec==='roteiro'){
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Gere um novo roteiro para o evento com exatamente 7 momentos.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Nova versão do roteiro'}
+Responda SOMENTE este JSON (sem texto fora, sem markdown):
+{"roteiro":[
+  {"tag":"Recepção","tempo":"19h00-19h30","titulo":"nome do momento","desc":"descrição em 1 frase"},
+  {"tag":"Abertura","tempo":"19h30-20h00","titulo":"nome","desc":"descrição"},
+  {"tag":"Conteúdo","tempo":"20h00-20h45","titulo":"nome","desc":"descrição"},
+  {"tag":"Intervalo","tempo":"20h45-21h00","titulo":"nome","desc":"descrição"},
+  {"tag":"Conteúdo","tempo":"21h00-21h30","titulo":"nome","desc":"descrição"},
+  {"tag":"Celebração","tempo":"21h30-21h45","titulo":"nome","desc":"descrição"},
+  {"tag":"Encerramento","tempo":"21h45-22h00","titulo":"nome","desc":"descrição"}
+]}
+Substitua TODOS os valores por conteúdo real e específico para este evento. Mantenha exatamente 7 itens.`,
+      fields:['roteiro']
+    };
+  }
+
+  // ── AUDIOVISUAL ───────────────────────────────────────
+  if(sec==='audiovisual'){
+    const onlyPecas = n && (n.includes('peça') || n.includes('peca') || n.includes('vídeo') || n.includes('video'));
+    const onlyEquipe = n && (n.includes('equipe') || n.includes('equipamento'));
+    if(onlyPecas){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE as peças audiovisuais para o evento (4 peças).
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON:
+{"audiovisual":{"pecas":[
+  {"nome":"nome da peça","duracao":"duração","prazo":"prazo de produção","desc":"descrição em 1 frase"},
+  {"nome":"peça 2","duracao":"duração","prazo":"prazo","desc":"descrição"},
+  {"nome":"peça 3","duracao":"duração","prazo":"prazo","desc":"descrição"},
+  {"nome":"peça 4","duracao":"duração","prazo":"prazo","desc":"descrição"}
+]}}`,
+        fields:['audiovisual.pecas']
+      };
+    }
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Regenere o plano audiovisual completo para o evento.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Nova versão do plano audiovisual'}
+Responda SOMENTE este JSON:
+{"audiovisual":{"intro":"contexto em 1 frase","pecas":[
+  {"nome":"nome","duracao":"duração","prazo":"prazo","desc":"descrição em 1 frase"},
+  {"nome":"nome","duracao":"duração","prazo":"prazo","desc":"descrição"},
+  {"nome":"nome","duracao":"duração","prazo":"prazo","desc":"descrição"},
+  {"nome":"nome","duracao":"duração","prazo":"prazo","desc":"descrição"}
+],"equipe":"descreva a equipe","equipamentos":"liste os equipamentos"}}`,
+      fields:['audiovisual']
+    };
+  }
+
+  // ── PRODUÇÃO ──────────────────────────────────────────
+  if(sec==='producao'){
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Gere um cronograma de produção com 6 fases.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Novo cronograma de produção'}
+Responda SOMENTE este JSON:
+{"producao":[
+  {"fase":"fase 1","prazo":"X meses antes","acoes":["ação 1","ação 2","ação 3"]},
+  {"fase":"fase 2","prazo":"X meses antes","acoes":["ação 1","ação 2","ação 3"]},
+  {"fase":"fase 3","prazo":"X meses antes","acoes":["ação 1","ação 2","ação 3"]},
+  {"fase":"fase 4","prazo":"X meses antes","acoes":["ação 1","ação 2","ação 3"]},
+  {"fase":"fase 5","prazo":"1 mês antes","acoes":["ação 1","ação 2","ação 3"]},
+  {"fase":"Pós-evento","prazo":"1 semana depois","acoes":["ação 1","ação 2","ação 3"]}
+]}
+Substitua TODOS os valores por fases e ações reais e específicas para este evento.`,
+      fields:['producao']
+    };
+  }
+
+  // ── LOGÍSTICA ─────────────────────────────────────────
+  if(sec==='logistica'){
+    const onlyForn = n && (n.includes('fornecedor') || n.includes('espaço') || n.includes('espaco'));
+    const onlyEquipe = n && (n.includes('equipe') || n.includes('staff'));
+    if(onlyForn){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE a lista de fornecedores para o evento (7 fornecedores).
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON:
+{"logistica":{"fornecedores":[
+  {"nome":"Serviço 1","det":"descrição em 1 frase","badge":"prazo"},
+  {"nome":"Serviço 2","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço 3","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço 4","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço 5","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço 6","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço 7","det":"descrição","badge":"prazo"}
+]}}`,
+        fields:['logistica.fornecedores']
+      };
+    }
+    if(onlyEquipe){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE a equipe necessária no dia do evento.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON:
+{"logistica":{"equipe_dia":["cargo 1 (qtd)","cargo 2 (qtd)","cargo 3 (qtd)","cargo 4 (qtd)","cargo 5 (qtd)"]}}`,
+        fields:['logistica.equipe_dia']
+      };
+    }
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Regenere logística completa do evento.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Nova versão da logística'}
+Responda SOMENTE este JSON:
+{"logistica":{"fornecedores":[
+  {"nome":"Serviço","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço","det":"descrição","badge":"prazo"},
+  {"nome":"Serviço","det":"descrição","badge":"prazo"}
+],"equipe_dia":["cargo (qtd)","cargo (qtd)","cargo (qtd)","cargo (qtd)","cargo (qtd)"]}}`,
+      fields:['logistica']
+    };
+  }
+
+  // ── COMUNICAÇÃO ───────────────────────────────────────
+  if(sec==='comunicacao'){
+    const onlyEst = n && (n.includes('estratégia') || n.includes('estrategia'));
+    const onlyCanais = n && (n.includes('canal') || n.includes('rede'));
+    if(onlyEst){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE a estratégia de comunicação.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON:
+{"comunicacao":{"estrategia":"escreva a estratégia em 2 frases"}}`,
+        fields:['comunicacao.estrategia']
+      };
+    }
+    if(onlyCanais){
+      return {
+        prompt:`Você é um produtor de eventos brasileiro. Gere SOMENTE os canais de comunicação recomendados.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note}
+Responda SOMENTE este JSON:
+{"comunicacao":{"canais":"liste os canais recomendados em 1-2 frases"}}`,
+        fields:['comunicacao.canais']
+      };
+    }
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Regenere o plano de comunicação completo com 5 fases.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Novo plano de comunicação'}
+Responda SOMENTE este JSON:
+{"comunicacao":{"estrategia":"estratégia em 2 frases","acoes":[
+  {"fase":"3 meses antes","acoes":["ação 1","ação 2"]},
+  {"fase":"2 meses antes","acoes":["ação 1","ação 2"]},
+  {"fase":"1 mês antes","acoes":["ação 1","ação 2"]},
+  {"fase":"Semana do evento","acoes":["ação 1","ação 2"]},
+  {"fase":"Pós-evento","acoes":["ação 1","ação 2"]}
+],"canais":"canais recomendados"}}`,
+      fields:['comunicacao']
+    };
+  }
+
+  // ── CHECKLIST ─────────────────────────────────────────
+  if(sec==='checklist'){
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Gere um checklist com 5 grupos de 4 itens cada.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Novo checklist'}
+Responda SOMENTE este JSON:
+{"checklist":[
+  {"grupo":"4 meses antes","itens":["item 1","item 2","item 3","item 4"]},
+  {"grupo":"3 meses antes","itens":["item 1","item 2","item 3","item 4"]},
+  {"grupo":"2 meses antes","itens":["item 1","item 2","item 3","item 4"]},
+  {"grupo":"1 mês antes","itens":["item 1","item 2","item 3","item 4"]},
+  {"grupo":"Dia do evento","itens":["item 1","item 2","item 3","item 4"]}
+]}
+Substitua TODOS os itens por ações reais e específicas para este evento.`,
+      fields:['checklist']
+    };
+  }
+
+  // ── DICAS ─────────────────────────────────────────────
+  if(sec==='dicas'){
+    return {
+      prompt:`Você é um produtor de eventos brasileiro. Gere 4 novas dicas estratégicas e práticas.
+${evCtx}
+INSTRUÇÃO DO PRODUTOR: ${note||'Novas dicas práticas'}
+Responda SOMENTE este JSON:
+{"dicas":["dica 1 — prática e específica","dica 2","dica 3","dica 4"]}`,
+      fields:['dicas']
+    };
+  }
+
+  return null;
+}
+
+// Applies only the fields that were regenerated
+function applyFields(sec, fields, parsed){
+  fields.forEach(field=>{
+    // Handle nested fields like 'audiovisual.pecas', 'logistica.fornecedores' etc
+    const parts = field.split('.');
+    if(parts.length===1){
+      // Top-level: just update currentPlan
+      if(parsed[field]!==undefined) currentPlan[field]=parsed[field];
+      // Also handle wrapped objects
+      if(field==='audiovisual'&&parsed.audiovisual) currentPlan.audiovisual={...currentPlan.audiovisual,...parsed.audiovisual};
+      if(field==='logistica'&&parsed.logistica) currentPlan.logistica={...currentPlan.logistica,...parsed.logistica};
+      if(field==='comunicacao'&&parsed.comunicacao) currentPlan.comunicacao={...currentPlan.comunicacao,...parsed.comunicacao};
+    } else {
+      // Nested: e.g. audiovisual.pecas
+      const [obj,key]=parts;
+      if(parsed[obj]&&parsed[obj][key]!==undefined){
+        if(!currentPlan[obj]) currentPlan[obj]={};
+        currentPlan[obj][key]=parsed[obj][key];
+      }
+    }
+  });
+}
+
+async function triggerRegen(sec){
+  const btn=document.getElementById('regen-'+sec);if(!btn)return;
+  btn.disabled=true;btn.textContent='Gerando...';
+  const note=(document.getElementById('note-'+sec)?.value||'').trim();
+  const tipos=S.tipos.map(v=>labelOf(v)).join(' + ');
+  const ctx=`${currentPlan?.nome_evento||'Evento'} | Tipo: ${tipos} | Cidade: ${S.city||'N/A'} | Convidados: ${S.guests} | Orçamento: R$${S.budget.toLocaleString('pt-BR')} | Tom: ${S.tom||'N/A'}`;
+  const regen=buildRegenPrompt(sec,note,ctx);
+  if(!regen){btn.disabled=false;btn.textContent='✦ Regerar';return;}
+  try{
+    const parsed=await callAI(regen.prompt,2500);
+    // Save snapshot of old data before overwriting
+    const oldSnap=sec==='conceito'
+      ?{conceito:currentPlan.conceito,identidade_visual:currentPlan.identidade_visual,nomes:currentPlan.nomes}
+      :currentPlan[sec];
+    addToSecHist(sec,JSON.parse(JSON.stringify(oldSnap||{})));
+    // Apply only the fields that changed
+    applyFields(sec,regen.fields,parsed);
+    // Update DOM
+    applyRegenResult(sec,parsed);
+    if(btn){btn.disabled=false;btn.textContent='✦ Regerar';}
+  }catch(e){if(btn){btn.disabled=false;btn.textContent='✦ Regerar';}alert('Erro ao regerar: '+e.message);}
+}
+
+function applyRegenResult(sec,parsed){
+  // Conceito fields
+  if(parsed.conceito){const el=document.getElementById('cv-conceito');if(el)el.textContent=parsed.conceito;}
+  if(parsed.identidade_visual){
+    const els=document.querySelectorAll('#sp0 .icard .ival');
+    if(els[1])els[1].textContent=parsed.identidade_visual;
+  }
+  if(parsed.nomes){const el=document.getElementById('names-wrap');if(el)el.innerHTML=(parsed.nomes||[]).map(n=>`<div class="name-chip">${n}</div>`).join('');}
+  // Roteiro
+  if(parsed.roteiro){const el=document.getElementById('rot-list');if(el)el.innerHTML=buildRotList(parsed.roteiro);}
+  // Audiovisual (full or partial)
+  const av=parsed.audiovisual;
+  if(av){
+    if(av.intro){const el=document.querySelector('#sp2 .sblock:nth-child(2) p');if(el)el.textContent=av.intro;}
+    if(av.pecas){const el=document.querySelector('#sp2 .rot-list');if(el)el.innerHTML=(av.pecas||[]).map(pc=>`<div class="rot-item"><div class="rot-time">${pc.duracao}</div><div><div class="rot-tag">${pc.prazo}</div><div class="rot-title">${pc.nome}</div><div class="rot-desc">${pc.desc}</div></div></div>`).join('');}
+    if(av.equipe){const el=document.querySelector('#sp2 .two-col .icard:first-child .ival');if(el)el.textContent=av.equipe;}
+    if(av.equipamentos){const el=document.querySelector('#sp2 .two-col .icard:last-child .ival');if(el)el.textContent=av.equipamentos;}
+  }
+  // Producao
+  if(parsed.producao){const el=document.getElementById('prod-tl');if(el)el.innerHTML=buildTl(parsed.producao);}
+  // Logistica (full or partial)
+  const log=parsed.logistica;
+  if(log){
+    if(log.fornecedores){const el=document.querySelector('#sp4 .forn-list');if(el)el.innerHTML=(log.fornecedores||[]).map(f=>`<div class="forn-item"><div><div class="forn-name">${f.nome}</div><div class="forn-det">${f.det}</div></div><span class="forn-badge">${f.badge}</span></div>`).join('');}
+    if(log.equipe_dia){const el=document.querySelector('#sp4 .chips');if(el)el.innerHTML=(log.equipe_dia||[]).map(e=>`<span class="chip">${e}</span>`).join('');}
+  }
+  // Comunicacao (full or partial)
+  const com=parsed.comunicacao;
+  if(com){
+    if(com.estrategia){const el=document.querySelector('#sp5 .sblock:first-child .icard .ival');if(el)el.textContent=com.estrategia;}
+    if(com.acoes){const el=document.querySelector('#sp5 .com-list');if(el)el.innerHTML=(com.acoes||[]).map(a=>`<div class="com-item"><div class="com-fase">${a.fase}</div><ul>${(a.acoes||[]).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');}
+    if(com.canais){const els=document.querySelectorAll('#sp5 .icard .ival');if(els[els.length-1])els[els.length-1].textContent=com.canais;}
+  }
+  // Checklist
+  if(parsed.checklist){const el=document.getElementById('chk-body');if(el)el.innerHTML=buildChk(parsed.checklist);}
+  // Dicas
+  if(parsed.dicas){const el=document.getElementById('dicas-body');if(el)el.innerHTML=buildDicas(parsed.dicas);}
+  renderSecHist(sec);
+}
+
+async function gerarMaisDicas(btnEl){
+  const btn=btnEl||event?.target;if(btn){btn.disabled=true;btn.textContent='Gerando...';}
+  const note=document.getElementById('note-dicas')?.value||'';
+  try{
+    const parsed=await callAI(`Produtor BR. Gere 4 novas dicas para evento: ${currentPlan?.nome_evento||''}, ${S.guests} convidados, ${S.city}, R$${S.budget}. Instruções: ${note||'dicas práticas e estratégicas'}. Responda SOMENTE JSON: {"dicas":["dica 1","dica 2","dica 3","dica 4"]}`,1200);
+    if(parsed.dicas&&currentPlan){
+      addToSecHist('dicas',JSON.stringify(currentPlan.dicas));
+      currentPlan.dicas=(currentPlan.dicas||[]).concat(parsed.dicas);
+      document.getElementById('dicas-body').innerHTML=buildDicas(currentPlan.dicas);
+    }
+    if(btn){btn.disabled=false;btn.textContent='✦ Gerar mais dicas';}
+  }catch(e){if(btn){btn.disabled=false;btn.textContent='✦ Gerar mais dicas';}alert('Erro: '+e.message);}
+}
+
+// ══ BUILD HELPERS ══════════════════════════════════════
+function buildRotList(rot){return(rot||[]).map(r=>`<div class="rot-item"><div class="rot-time">${r.tempo}</div><div><div class="rot-tag">${r.tag}</div><div class="rot-title">${r.titulo}</div><div class="rot-desc">${r.desc}</div></div></div>`).join('');}
+function buildTl(prod){return(prod||[]).map(f=>`<div class="tli"><div class="tll"><div class="tld"></div><div class="tlln"></div></div><div><div class="tl-phase">${f.fase}</div><div class="tl-prazo">${f.prazo}</div><ul class="tl-acts">${(f.acoes||[]).map(a=>`<li>${a}</li>`).join('')}</ul></div></div>`).join('');}
+function buildChk(chk){return(chk||[]).map(g=>`<div class="chk-group"><div class="chk-gtitle">${g.grupo}</div>${(g.itens||[]).map(it=>`<div class="chk-item" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-txt">${it}</div></div>`).join('')}</div>`).join('');}
+function buildDicas(dicas){return(dicas||[]).map((d,i)=>`<div class="tip-item"><div class="tip-num">Dica ${i+1}</div>${d}</div>`).join('');}
+
+function editBlock(sec,ph){
+  return `<div class="edit-box"><div class="edit-box-title">✏️ Editar ou solicitar nova versão</div><textarea id="note-${sec}" placeholder="${ph}"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-ink btn-sm" id="regen-${sec}" onclick="triggerRegen('${sec}')">✦ Regerar esta seção</button></div></div><div id="sh-${sec}" style="margin-top:8px"></div>`;
+}
+
+// ══ RENDER RESULT ══════════════════════════════════════
+function renderResult(p){
+  const bud=S.budget;
+  const tipoStr=S.tipos.map(v=>labelOf(v)).join(' + ');
+
+  const conceito=`
+    <div class="sblock"><div class="slabel">Conceito central</div><div class="icard"><div class="ival" id="cv-conceito">${p.conceito}</div></div></div>
+    <div class="divider"></div>
+    <div class="sblock"><div class="slabel">Identidade visual e tom</div><div class="icard"><div class="ival">${p.identidade_visual}</div></div></div>
+    <div class="divider"></div>
+    <div class="sblock"><div class="slabel">Sugestões de nomes</div><div class="names-wrap" id="names-wrap">${(p.nomes||[]).map(n=>`<div class="name-chip">${n}</div>`).join('')}</div></div>
+    <div class="sblock"><div class="slabel" style="color:var(--blue)">O que inclui o conceito?</div><div class="icard"><div class="ival">Define a identidade emocional do evento: tom de comunicação, paleta de cores, tipografia, estilo de decoração e linguagem verbal/visual. É o ponto de partida para todas as decisões criativas.</div></div></div>
+    ${editBlock('conceito','Ex: Não gostei dos nomes. Quero algo mais minimalista em inglês...')}`;
+
+  const roteiro=`
+    <div class="sblock"><div class="slabel" style="color:var(--blue)">O que são momentos-chave?</div><div class="icard"><div class="ival">São os pontos de maior impacto emocional ou protocolar: abertura oficial, discurso principal, homenagem, brinde, apresentação artística. Precisam de atenção especial na produção e no roteiro.</div></div></div>
+    <div class="sblock"><div class="slabel">Roteiro completo</div><div class="rot-list" id="rot-list">${buildRotList(p.roteiro)}</div></div>
+    ${editBlock('roteiro','Ex: Adicione um momento de networking de 30 min antes do jantar...')}`;
+
+  const av=`
+    <div class="sblock"><div class="slabel" style="color:var(--blue)">O que é um press kit?</div><div class="icard"><div class="ival">Pacote de materiais para imprensa: release do evento, fotos em alta resolução (logo, local, palestrantes), programa oficial, dados do organizador e contato da assessoria. Enviar com pelo menos 2 semanas de antecedência.</div></div></div>
+    <div class="sblock"><p style="font-size:13px;color:var(--ink2);margin-bottom:1rem">${p.audiovisual?.intro||''}</p><div class="slabel">Peças audiovisuais</div>
+    <div class="rot-list">${(p.audiovisual?.pecas||[]).map(pc=>`<div class="rot-item"><div class="rot-time">${pc.duracao}</div><div><div class="rot-tag">${pc.prazo}</div><div class="rot-title">${pc.nome}</div><div class="rot-desc">${pc.desc}</div></div></div>`).join('')}</div></div>
+    <div class="divider"></div>
+    <div class="two-col"><div class="icard"><div class="ilabel">Equipe</div><div class="ival">${p.audiovisual?.equipe||''}</div></div><div class="icard"><div class="ilabel">Equipamentos</div><div class="ival">${p.audiovisual?.equipamentos||''}</div></div></div>
+    ${editBlock('audiovisual','Ex: Adicione transmissão ao vivo no YouTube...')}`;
+
+  const prod=`<div class="sblock"><div class="slabel">Cronograma de produção</div><div class="tl" id="prod-tl">${buildTl(p.producao)}</div></div>
+    ${editBlock('producao','Ex: Tenho apenas 2 meses de prazo. Adapte o cronograma...')}`;
+
+  const logist=`
+    <div class="sblock"><div class="slabel" style="color:var(--blue)">Como usar a base de fornecedores?</div><div class="icard"><div class="ival">Acesse a aba <strong>Fornecedores</strong> no topo para ver nossa base completa com estimativa de preços por categoria. Use como referência para orçar cada serviço abaixo.</div></div></div>
+    <div class="sblock"><div class="slabel">Fornecedores essenciais</div><div class="forn-list">${(p.logistica?.fornecedores||[]).map(f=>`<div class="forn-item"><div><div class="forn-name">${f.nome}</div><div class="forn-det">${f.det}</div></div><span class="forn-badge">${f.badge}</span></div>`).join('')}</div></div>
+    <div class="divider"></div>
+    <div class="sblock"><div class="slabel">Equipe no dia</div><div class="chips">${(p.logistica?.equipe_dia||[]).map(e=>`<span class="chip">${e}</span>`).join('')}</div></div>
+    ${editBlock('logistica','Ex: Sugira espaços específicos em Fortaleza para 200 pessoas...')}`;
+
+  const com=`
+    <div class="sblock"><div class="slabel">Estratégia</div><div class="icard"><div class="ival">${p.comunicacao?.estrategia||''}</div></div></div>
+    <div class="divider"></div>
+    <div class="sblock"><div class="slabel">Plano por fase</div><div class="com-list">${(p.comunicacao?.acoes||[]).map(a=>`<div class="com-item"><div class="com-fase">${a.fase}</div><ul>${(a.acoes||[]).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div></div>
+    <div class="divider"></div>
+    <div class="sblock"><div class="slabel">Canais recomendados</div><div class="icard"><div class="ival">${p.comunicacao?.canais||''}</div></div></div>
+    ${editBlock('comunicacao','Ex: Inclua estratégia com influenciadores locais...')}`;
+
+  const orc=`<div class="sblock">
+    <div class="budget-total"><div><div class="bt-label">Orçamento total</div><div class="bt-val" id="bud-total-display">R$ ${bud.toLocaleString('pt-BR')}</div></div><div style="text-align:right"><div class="bt-label">Total alocado</div><div style="font-size:20px;font-weight:700;color:var(--gold2)" id="bud-pct-display">0%</div></div></div>
+    <div class="fhint" style="margin-bottom:12px">Edite a % ou o valor. O sistema recalcula automaticamente. Adicione novos itens abaixo.</div>
+    <table class="budget-table"><thead><tr><th>Categoria</th><th>%</th><th>Valor (R$)</th><th>Calculado</th><th></th></tr></thead><tbody id="bud-tbody"></tbody></table>
+    <div class="bud-warn" id="bud-warn"></div><div class="bud-ok" id="bud-ok">✓ Orçamento 100% distribuído</div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="addBudRow()">+ Adicionar item</button>
+      <button class="btn btn-green btn-sm" onclick="downloadXLSX()">⬇ Baixar planilha Excel</button>
+    </div>
+  </div>`;
+
+  const chk=`<div class="sblock" id="chk-body">${buildChk(p.checklist)}</div>${editBlock('checklist','Ex: Adicione itens para evento com transmissão ao vivo...')}`;
+
+  const dicas=`
+    <div id="dicas-body">${buildDicas(p.dicas)}</div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold btn-sm" onclick="gerarMaisDicas(this)">✦ Gerar mais dicas</button></div>
+    <div id="sh-dicas" style="margin-top:8px"></div>
+    ${editBlock('dicas','Ex: Quero dicas sobre como lidar com patrocinadores...')}`;
+
+  const tabs=['Conceito','Roteiro','Audiovisual','Produção','Logística','Comunicação','Orçamento','Checklist','Dicas'];
+  const panels=[conceito,roteiro,av,prod,logist,com,orc,chk,dicas];
+
+  document.getElementById('res-out').innerHTML=`
+    <div class="res-hdr">
+      <div class="rtag">${p.tipo_display||tipoStr}</div>
+      <h2>${p.nome_evento}</h2>
+      <div class="rmeta">${S.cliente?`<span>👤 ${S.cliente}</span>`:''} ${S.promotor?`<span>🎯 ${S.promotor}</span>`:''} ${S.city?`<span>📍 ${S.city}</span>`:''} ${S.date?`<span>📅 ${S.date}</span>`:''} <span>👥 ${S.guests.toLocaleString('pt-BR')} convidados</span> <span>💰 R$ ${bud.toLocaleString('pt-BR')}</span></div>
+    </div>
+    <div class="card">
+      <div class="stabs no-print">${tabs.map((l,i)=>`<button class="stab${i===0?' on':''}" onclick="swSec(${i})">${l}</button>`).join('')}</div>
+      ${panels.map((h,i)=>`<div class="spanel${i===0?' on':''}" id="sp${i}">${h}</div>`).join('')}
+    </div>
+    <div class="btn-row no-print">
+      <button class="btn btn-ghost" onclick="newEvent()">← Novo evento</button>
+      <button class="btn btn-ink" onclick="doPrint()">🖨 Imprimir planejamento</button>
+      <button class="btn btn-green" onclick="downloadXLSX()">⬇ Baixar planilha Excel</button>
+    </div>`;
+
+  initBudget(p.orcamento||[]);
+  showVw('v-result');
+}
+
+function swSec(i){document.querySelectorAll('.stab').forEach((t,j)=>t.classList.toggle('on',j===i));document.querySelectorAll('.spanel').forEach((p,j)=>p.classList.toggle('on',j===i));}
+function toggleChk(el){el.classList.toggle('done');el.querySelector('.chk-box').textContent=el.classList.contains('done')?'✓':'';}
+function doPrint(){document.querySelectorAll('.spanel').forEach(p=>p.style.display='block');window.print();setTimeout(()=>swSec(0),600);}
+
+// ══ EXCEL DOWNLOAD ═════════════════════════════════════
+function downloadXLSX(){
+  if(!currentPlan){alert('Gere um planejamento primeiro.');return;}
+  const p=currentPlan;
+  const bud=S.budget;
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: RESUMO
+  const resumo=[
+    ['PLANEJAMENTO DE EVENTO',''],
+    ['Evento',p.nome_evento||''],
+    ['Tipo',p.tipo_display||''],
+    ['Cliente (dono do evento)',S.cliente||''],
+    ['Promotor (produtora)',S.promotor||''],
+    ['Cidade',S.city||''],
+    ['Data prevista',S.date||''],
+    ['Convidados',S.guests],
+    ['Orçamento total','R$ '+bud.toLocaleString('pt-BR')],
+    ['Meses de produção',S.months],
+    ['Tom do evento',S.tom||''],
+    ['',''],
+    ['Conceito',p.conceito||''],
+    ['Identidade visual',p.identidade_visual||''],
+    ['',''],
+    ['SUGESTÕES DE NOMES',''],
+    ...(p.nomes||[]).map((n,i)=>['Nome '+(i+1),n]),
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');
+
+  // Sheet 2: ORÇAMENTO
+  const orcRows=[
+    ['ORÇAMENTO DETALHADO','','',''],
+    ['Categoria','%','Valor estimado (R$)','Descrição'],
+    ...budgetRows.map(r=>[r.cat,r.pct,Math.round(bud*r.pct/100),r.desc]),
+    ['','','',''],
+    ['TOTAL',budgetRows.reduce((s,r)=>s+r.pct,0),bud,''],
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(orcRows),'Orçamento');
+
+  // Sheet 3: ROTEIRO
+  const rotRows=[
+    ['ROTEIRO DO EVENTO','','',''],
+    ['Horário','Momento','Título','Descrição'],
+    ...(p.roteiro||[]).map(r=>[r.tempo,r.tag,r.titulo,r.desc]),
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rotRows),'Roteiro');
+
+  // Sheet 4: FORNECEDORES
+  const fornRows=[
+    ['FORNECEDORES ESSENCIAIS','',''],
+    ['Serviço / Fornecedor','Descrição','Prazo'],
+    ...(p.logistica?.fornecedores||[]).map(f=>[f.nome,f.det,f.badge]),
+    ['','',''],
+    ['EQUIPE NO DIA','',''],
+    ...(p.logistica?.equipe_dia||[]).map(e=>[e,'','']),
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fornRows),'Fornecedores');
+
+  // Sheet 5: CRONOGRAMA
+  const prodRows=[
+    ['CRONOGRAMA DE PRODUÇÃO','',''],
+    ['Fase','Prazo','Ações'],
+    ...(p.producao||[]).flatMap(f=>f.acoes.map((a,i)=>[i===0?f.fase:'',i===0?f.prazo:'',a])),
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(prodRows),'Cronograma');
+
+  // Sheet 6: CHECKLIST
+  const chkRows=[
+    ['CHECKLIST COMPLETO',''],
+    ['Grupo','Item'],
+    ...(p.checklist||[]).flatMap(g=>g.itens.map((it,i)=>[i===0?g.grupo:'',it])),
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(chkRows),'Checklist');
+
+  // Sheet 7: COMUNICAÇÃO
+  const comRows=[
+    ['PLANO DE COMUNICAÇÃO',''],
+    ['Estratégia',p.comunicacao?.estrategia||''],
+    ['',''],
+    ['Fase','Ações'],
+    ...(p.comunicacao?.acoes||[]).flatMap(a=>a.acoes.map((x,i)=>[i===0?a.fase:'',x])),
+    ['',''],
+    ['Canais',p.comunicacao?.canais||''],
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(comRows),'Comunicação');
+
+  // Sheet 8: AUDIOVISUAL
+  const avRows=[
+    ['PRODUÇÃO AUDIOVISUAL','','',''],
+    ['Peça','Duração','Prazo','Descrição'],
+    ...(p.audiovisual?.pecas||[]).map(pc=>[pc.nome,pc.duracao,pc.prazo,pc.desc]),
+    ['','','',''],
+    ['Equipe necessária',p.audiovisual?.equipe||'','',''],
+    ['Equipamentos',p.audiovisual?.equipamentos||'','',''],
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(avRows),'Audiovisual');
+
+  const nome=(p.nome_evento||'evento').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'_');
+  XLSX.writeFile(wb,`Planejamento_${nome}.xlsx`);
+}
+
+// ══ NEW EVENT ══════════════════════════════════════════
+function newEvent(){
+  updateKeyBtn();
+  S.tipos=[];S.fmts=[];S.cliente='';S.promotor='';S.desc='';S.city='';S.date='';S.publico='';
+  S.guests=150;S.budget=50000;S.months=4;S.perfil='';S.tom='';S.extra='';S.maxStep=1;
+  currentPlan=null;budgetRows=[];
+  document.querySelectorAll('.sel-btn,.fmt-opt').forEach(b=>b.classList.remove('on'));
+  ['tags-tipos','tags-fmts'].forEach(id=>document.getElementById(id).innerHTML='');
+  ['btn1','btn3'].forEach(id=>document.getElementById(id).disabled=true);
+  ['outro-tipo-f','outro-fmt-f'].forEach(id=>document.getElementById(id).style.display='none');
+  ['f-cliente','f-promotor','f-desc','f-city','f-date','f-publico','f-extra'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('n-guests').value=150;document.getElementById('n-budget').value=50000;document.getElementById('n-months').value=4;
+  document.getElementById('nd-guests').textContent='150 pessoas';document.getElementById('nd-budget').textContent='R$ 50.000';document.getElementById('nd-months').textContent='4 meses';
+  document.querySelectorAll('.err').forEach(e=>e.remove());
+  goStep(1);
+}
+// Init
+updateKeyBtn();
+// Show key modal on first load if no key and not on claude.ai
+if(!getKey()&&!window.location.href.includes('claude.ai')){openKeyModal();}
+</script>
+</body>
+</html>

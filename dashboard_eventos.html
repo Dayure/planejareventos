@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard — Produção de Eventos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#141210;--ink2:#5a534d;--ink3:#9a9089;
+  --paper:#faf8f5;--paper2:#f0ede8;--paper3:#e5e0d8;
+  --gold:#c9a84c;--gold2:#e8c96a;--gold-bg:#fdf6e3;--gold-bd:#e0c878;
+  --green:#2d6a4f;--green-bg:#e8f5ee;--green-bd:#9FE1CB;
+  --red:#c0392b;--red-bg:#fdecea;
+  --blue:#1a4a7a;--blue-bg:#e8f0fa;--blue-bd:#85B7EB;
+  --purple:#534AB7;--purple-bg:#EEEDFE;--purple-bd:#AFA9EC;
+  --amber:#BA7517;--amber-bg:#FAEEDA;--amber-bd:#FAC775;
+  --r:10px;--rlg:16px;--sh:0 2px 16px rgba(20,18,16,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--ink);display:flex;flex-direction:column;z-index:100;padding:0}
+.sb-logo{padding:1.5rem 1.25rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo-tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);margin-bottom:4px;font-weight:600}
+.sb-logo-name{font-family:'DM Serif Display',serif;font-size:18px;color:#fff;line-height:1.2}
+.sb-logo-name em{font-style:italic;color:var(--gold2)}
+.sb-nav{flex:1;padding:1rem 0;overflow-y:auto}
+.sb-section{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:0 1.25rem;margin:1rem 0 .4rem;font-weight:600}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 1.25rem;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;transition:all .2s;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.sb-item.active{color:#fff;background:rgba(201,168,76,.15);border-right:3px solid var(--gold)}
+.sb-item .sb-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.sb-footer{padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.08)}
+.sb-footer a{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.4);text-decoration:none;transition:color .2s}
+.sb-footer a:hover{color:var(--gold2)}
+
+/* MAIN */
+.main{margin-left:220px;min-height:100vh;padding:2rem 2rem 4rem}
+.page{display:none}.page.active{display:block}
+.page-title{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--ink2);margin-bottom:1.75rem}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:1.75rem}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--paper3);border-radius:var(--rlg);padding:1.5rem;box-shadow:var(--sh)}
+.card-title{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-bottom:1rem}
+
+/* METRIC CARDS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{background:#fff;border:1px solid var(--paper3);border-radius:var(--rlg);padding:1.25rem 1.5rem;box-shadow:var(--sh);position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rlg) var(--rlg) 0 0}
+.metric.gold::before{background:var(--gold)}
+.metric.green::before{background:var(--green)}
+.metric.blue::before{background:var(--blue)}
+.metric.purple::before{background:var(--purple)}
+.metric-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.metric-val{font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;line-height:1;margin-bottom:4px}
+.metric-val.gold{color:var(--gold)}.metric-val.green{color:var(--green)}.metric-val.blue{color:var(--blue)}.metric-val.purple{color:var(--purple)}
+.metric-sub{font-size:12px;color:var(--ink3)}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:1.5rem}
+.grid-13{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:1.5rem}
+.grid-21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:1.5rem}
+@media(max-width:800px){.grid-2,.grid-3,.grid-13,.grid-21{grid-template-columns:1fr}}
+.full{margin-bottom:1.5rem}
+
+/* EVENT LIST */
+.evt-list{display:flex;flex-direction:column;gap:0}
+.evt-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--paper2);cursor:pointer;transition:background .15s}
+.evt-item:last-child{border-bottom:none}
+.evt-item:hover{background:var(--paper2);margin:0 -1.5rem;padding:11px 1.5rem}
+.evt-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.evt-info{flex:1;min-width:0}
+.evt-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evt-meta{font-size:11px;color:var(--ink3);display:flex;gap:8px;flex-wrap:wrap;margin-top:1px}
+.evt-budget{font-size:13px;font-weight:600;color:var(--green);flex-shrink:0}
+.evt-date-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;flex-shrink:0}
+
+/* CALENDAR */
+.cal-wrap{overflow-x:auto}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{border:1px solid var(--paper3);background:#fff;border-radius:var(--r);width:32px;height:32px;cursor:pointer;font-size:14px;transition:all .2s;font-family:'DM Sans',sans-serif}
+.cal-nav button:hover{border-color:var(--gold);color:var(--gold)}
+.cal-month{font-size:15px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day-name{font-size:10px;font-weight:700;text-align:center;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;padding:4px 0}
+.cal-day{min-height:56px;border-radius:var(--r);padding:4px;font-size:12px;background:var(--paper2);transition:all .2s;position:relative}
+.cal-day.other-month{opacity:.35}
+.cal-day.today{background:var(--gold-bg);border:1.5px solid var(--gold-bd)}
+.cal-day.has-event{background:#fff;border:1px solid var(--paper3)}
+.cal-day .cal-day-num{font-weight:600;font-size:12px;margin-bottom:2px}
+.cal-day.today .cal-day-num{color:var(--gold)}
+.cal-evt-pill{font-size:10px;font-weight:600;border-radius:4px;padding:1px 5px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* CHECKLIST */
+.chk-section{margin-bottom:1.25rem}
+.chk-section-title{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.chk-prog-bar{height:4px;background:var(--paper3);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.chk-prog-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.chk-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--paper2);cursor:pointer}
+.chk-row:last-child{border-bottom:none}
+.chk-row:hover .chk-box{border-color:var(--gold)}
+.chk-box{width:16px;height:16px;border:2px solid var(--paper3);border-radius:4px;flex-shrink:0;margin-top:1px;transition:all .15s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.chk-row.done .chk-box{background:var(--green);border-color:var(--green)}
+.chk-row.done .chk-label{text-decoration:line-through;color:var(--ink3)}
+.chk-label{font-size:13px}
+.chk-event-name{font-size:11px;color:var(--ink3);margin-top:1px}
+
+/* FINANCE TABLE */
+.fin-table{width:100%;border-collapse:collapse;font-size:13px}
+.fin-table th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:6px 10px;text-align:left;border-bottom:2px solid var(--paper3)}
+.fin-table td{padding:10px 10px;border-bottom:1px solid var(--paper2);vertical-align:middle}
+.fin-table tr:last-child td{border-bottom:none}
+.fin-table tr:hover td{background:var(--paper2)}
+.fin-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px}
+
+/* NEXT EVENTS */
+.next-list{display:flex;flex-direction:column;gap:10px}
+.next-item{display:flex;gap:14px;align-items:flex-start;padding:12px;background:var(--paper2);border-radius:var(--r);cursor:pointer;transition:all .2s}
+.next-item:hover{background:var(--paper3)}
+.next-countdown{text-align:center;min-width:52px;flex-shrink:0}
+.next-countdown .nc-num{font-family:'DM Serif Display',serif;font-size:26px;line-height:1;color:var(--gold)}
+.next-countdown .nc-label{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.next-info{}
+.next-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.next-meta{font-size:12px;color:var(--ink2);display:flex;gap:10px;flex-wrap:wrap}
+
+/* TIPO CHART */
+.chart-wrap{position:relative;height:200px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--ink3)}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:14px}
+.empty-state a{color:var(--gold);text-decoration:none;font-weight:600}
+.empty-state a:hover{text-decoration:underline}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:none;text-decoration:none}
+.btn-gold{background:var(--gold);color:var(--ink)}.btn-gold:hover{background:#b8913a}
+.btn-ghost{background:transparent;color:var(--ink2);border:1.5px solid var(--paper3)}.btn-ghost:hover{border-color:var(--ink2);color:var(--ink)}
+
+/* EVENT DETAIL MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,18,16,.5);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--rlg);padding:2rem;max-width:680px;width:calc(100% - 2rem);max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(20,18,16,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--paper2)}
+.modal-title{font-family:'DM Serif Display',serif;font-size:22px}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink3);padding:0;line-height:1}.modal-close:hover{color:var(--ink)}
+.modal-sec{margin-bottom:1rem}
+.modal-sec-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.modal-chips{display:flex;flex-wrap:wrap;gap:6px}
+.modal-chip{background:var(--paper2);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500}
+.divider{border:none;border-top:1px solid var(--paper2);margin:1rem 0}
+
+/* API KEY */
+.apikey-overlay{display:none;position:fixed;inset:0;background:rgba(20,18,16,.6);z-index:9999;align-items:center;justify-content:center}
+.apikey-overlay.open{display:flex}
+.apikey-modal{background:#fff;border-radius:16px;padding:2rem;max-width:460px;width:calc(100% - 2rem);box-shadow:0 24px 64px rgba(20,18,16,.25)}
+.apikey-modal h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px}
+.apikey-modal p{font-size:13px;color:#5a534d;margin-bottom:1.25rem;line-height:1.6}
+.apikey-input-wrap{position:relative;margin-bottom:8px}
+.apikey-input-wrap input{width:100%;padding:11px 44px 11px 14px;border:1.5px solid #e5e0d8;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:#141210;background:#faf8f5;outline:none;transition:border-color .2s}
+.apikey-input-wrap input:focus{border-color:#c9a84c;background:#fff}
+.apikey-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#9a9089}
+.apikey-hint{font-size:11px;color:#9a9089;margin-bottom:1.25rem}
+.apikey-hint a{color:#c9a84c;text-decoration:none;font-weight:600}
+.apikey-err{font-size:12px;color:#c0392b;margin-bottom:10px;display:none}
+.apikey-saved{font-size:12px;color:#2d6a4f;margin-bottom:10px;display:none}
+.ak-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+.ak-btn-gold{background:#c9a84c;color:#141210}.ak-btn-gold:hover{background:#b8913a}
+.ak-btn-ghost{background:transparent;color:#5a534d;border:1.5px solid #e5e0d8}.ak-btn-ghost:hover{border-color:#5a534d;color:#141210}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--paper3);border-radius:3px}
+@media(max-width:700px){.sidebar{display:none}.main{margin-left:0}}
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="apikey-overlay" id="apikey-overlay">
+  <div class="apikey-modal">
+    <h2>Chave da API</h2>
+    <p>Para usar o sistema fora do Claude.ai, você precisa de uma chave de API da Anthropic. Ela fica salva apenas no seu navegador e nunca é enviada para nenhum outro lugar.</p>
+    <div class="apikey-input-wrap">
+      <input type="password" id="apikey-input" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
+      <button class="apikey-toggle" onclick="toggleKeyVis()">👁</button>
+    </div>
+    <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></div>
+    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
+    <div class="apikey-saved" id="apikey-saved">✓ Chave salva!</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="ak-btn ak-btn-gold" onclick="saveKey()">Salvar chave</button>
+      <button class="ak-btn ak-btn-ghost" onclick="closeKeyModal()" id="apikey-cancel" style="display:none">Cancelar</button>
+      <button class="ak-btn ak-btn-ghost" onclick="removeKey()" id="apikey-remove" style="display:none;color:#c0392b;border-color:#f5c6c2">Remover</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-tag">Produtora</div>
+    <div class="sb-logo-name">Dashboard de <em>eventos</em></div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Visão geral</div>
+    <button class="sb-item active" onclick="nav('overview')"><span class="sb-icon">◈</span>Overview</button>
+    <button class="sb-item" onclick="nav('calendar')"><span class="sb-icon">◷</span>Calendário</button>
+    <div class="sb-section">Gestão</div>
+    <button class="sb-item" onclick="nav('events')"><span class="sb-icon">◉</span>Eventos</button>
+    <button class="sb-item" onclick="nav('finance')"><span class="sb-icon">◈</span>Financeiro</button>
+    <button class="sb-item" onclick="nav('checklist')"><span class="sb-icon">◎</span>Checklists</button>
+  </div>
+  <div class="sb-footer">
+    <a href="sistema_producao_eventos.html" target="_blank">← Voltar ao sistema</a>
+    <div style="margin-top:10px">
+      <button id="dash-apikey-btn" onclick="openKeyModal()" style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:all .2s">🔑 API Key</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="pg-overview">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Overview</div>
+        <div class="page-sub" id="ov-sub">Carregando dados...</div>
+      </div>
+      <a href="sistema_producao_eventos.html" target="_blank" class="btn btn-gold">+ Novo evento</a>
+    </div>
+    <div class="metrics">
+      <div class="metric gold"><div class="metric-label">Total de eventos</div><div class="metric-val gold" id="m-total">—</div><div class="metric-sub">planejamentos criados</div></div>
+      <div class="metric green"><div class="metric-label">Volume total</div><div class="metric-val green" id="m-volume">—</div><div class="metric-sub">em orçamentos</div></div>
+      <div class="metric blue"><div class="metric-label">Próximo evento</div><div class="metric-val blue" id="m-next-days">—</div><div class="metric-sub" id="m-next-name">dias restantes</div></div>
+      <div class="metric purple"><div class="metric-label">Tipos diferentes</div><div class="metric-val purple" id="m-tipos">—</div><div class="metric-sub">categorias de eventos</div></div>
+    </div>
+    <div class="grid-21">
+      <div class="card">
+        <div class="card-title">Próximos eventos</div>
+        <div id="next-events-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Eventos por tipo</div>
+        <div class="chart-wrap"><canvas id="chart-tipos"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Eventos recentes</div>
+        <div id="recent-events-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Orçamento por evento</div>
+        <div class="chart-wrap"><canvas id="chart-budget"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="page" id="pg-calendar">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Calendário</div>
+        <div class="page-sub">Visualize seus eventos no tempo</div>
+      </div>
+    </div>
+    <div class="card full">
+      <div class="cal-header">
+        <div class="cal-month" id="cal-month-title">—</div>
+        <div class="cal-nav">
+          <button onclick="calNav(-1)">‹</button>
+          <button onclick="calNav(0)" style="width:auto;padding:0 10px;font-size:12px">Hoje</button>
+          <button onclick="calNav(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div class="card full">
+      <div class="card-title">Eventos do mês</div>
+      <div id="cal-month-events"></div>
+    </div>
+  </div>
+
+  <!-- EVENTS -->
+  <div class="page" id="pg-events">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Todos os eventos</div>
+        <div class="page-sub">Histórico completo de planejamentos</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="filter-tipo" onchange="renderEvents()" style="padding:7px 12px;border:1px solid var(--paper3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12px;background:#fff;color:var(--ink);outline:none">
+          <option value="">Todos os tipos</option>
+        </select>
+        <select id="filter-sort" onchange="renderEvents()" style="padding:7px 12px;border:1px solid var(--paper3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12px;background:#fff;color:var(--ink);outline:none">
+          <option value="date-desc">Mais recentes</option>
+          <option value="date-asc">Mais antigos</option>
+          <option value="budget-desc">Maior orçamento</option>
+          <option value="budget-asc">Menor orçamento</option>
+        </select>
+      </div>
+    </div>
+    <div id="events-table-wrap" class="card full"></div>
+  </div>
+
+  <!-- FINANCE -->
+  <div class="page" id="pg-finance">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Financeiro</div>
+        <div class="page-sub">Orçamentos e distribuição por categoria</div>
+      </div>
+    </div>
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric gold"><div class="metric-label">Volume total</div><div class="metric-val gold" id="fin-total">—</div><div class="metric-sub">soma de todos os orçamentos</div></div>
+      <div class="metric green"><div class="metric-label">Média por evento</div><div class="metric-val green" id="fin-avg">—</div><div class="metric-sub">orçamento médio</div></div>
+      <div class="metric blue"><div class="metric-label">Maior orçamento</div><div class="metric-val blue" id="fin-max">—</div><div class="metric-sub" id="fin-max-name">—</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Orçamento por evento</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="chart-fin-bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Distribuição média por categoria</div>
+        <div class="chart-wrap" style="height:280px"><canvas id="chart-fin-cat"></canvas></div>
+      </div>
+    </div>
+    <div class="card full">
+      <div class="card-title">Detalhamento por evento</div>
+      <div id="fin-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="page" id="pg-checklist">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Checklists</div>
+        <div class="page-sub">Acompanhe o progresso de cada evento</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="chk-filter" onchange="renderChecklist()" style="padding:7px 12px;border:1px solid var(--paper3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12px;background:#fff;color:var(--ink);outline:none">
+          <option value="">Todos os eventos</option>
+        </select>
+      </div>
+    </div>
+    <div id="checklist-content"></div>
+  </div>
+
+</div><!-- main -->
+
+<!-- EVENT DETAIL MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<script>
+// ══ API KEY MANAGEMENT ════════════════════════════════
+function getKey(){return localStorage.getItem('anthropic_key')||'';}
+function updateDashKeyBtn(){
+  const btn=document.getElementById('dash-apikey-btn');if(!btn)return;
+  const k=getKey();
+  btn.textContent=k?'🔑 API Key ✓':'🔑 API Key';
+  btn.style.color=k?'rgba(201,168,76,.9)':'rgba(255,255,255,.5)';
+  btn.style.borderColor=k?'rgba(201,168,76,.4)':'rgba(255,255,255,.15)';
+}
+function openKeyModal(){
+  const k=getKey();
+  document.getElementById('apikey-input').value=k||'';
+  document.getElementById('apikey-err').style.display='none';
+  document.getElementById('apikey-saved').style.display='none';
+  document.getElementById('apikey-cancel').style.display=k?'inline-flex':'none';
+  document.getElementById('apikey-remove').style.display=k?'inline-flex':'none';
+  document.getElementById('apikey-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('apikey-input').focus(),100);
+}
+function closeKeyModal(){document.getElementById('apikey-overlay').classList.remove('open');}
+function toggleKeyVis(){const inp=document.getElementById('apikey-input');inp.type=inp.type==='password'?'text':'password';}
+function saveKey(){
+  const val=document.getElementById('apikey-input').value.trim();
+  if(val&&!val.startsWith('sk-ant-')){document.getElementById('apikey-err').style.display='block';return;}
+  document.getElementById('apikey-err').style.display='none';
+  localStorage.setItem('anthropic_key',val);
+  document.getElementById('apikey-saved').style.display='block';
+  updateDashKeyBtn();
+  setTimeout(()=>closeKeyModal(),1200);
+}
+function removeKey(){
+  localStorage.removeItem('anthropic_key');
+  document.getElementById('apikey-input').value='';
+  document.getElementById('apikey-remove').style.display='none';
+  document.getElementById('apikey-cancel').style.display='none';
+  document.getElementById('apikey-saved').style.display='none';
+  updateDashKeyBtn();
+}
+document.getElementById('apikey-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('apikey-overlay'))closeKeyModal();});
+// ══ DATA ═══════════════════════════════════════════════
+let HIST=[];
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth();
+let chkState={};// {evtId_grupo_itemIdx: bool}
+
+function loadData(){
+  try{
+    HIST=JSON.parse(localStorage.getItem('evt_hist')||'[]');
+    // Load checklist state
+    try{chkState=JSON.parse(localStorage.getItem('dash_chk')||'{}');}catch(e){chkState={};}
+  }catch(e){HIST=[];}
+}
+function saveChkState(){
+  try{localStorage.setItem('dash_chk',JSON.stringify(chkState));}catch(e){}
+}
+
+// ══ NAVIGATION ════════════════════════════════════════
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+page).classList.add('active');
+  event.currentTarget.classList.add('active');
+  renderPage(page);
+}
+function renderPage(page){
+  if(page==='overview')renderOverview();
+  else if(page==='calendar')renderCalendar();
+  else if(page==='events')renderEvents();
+  else if(page==='finance')renderFinance();
+  else if(page==='checklist')renderChecklist();
+}
+
+// ══ HELPERS ═══════════════════════════════════════════
+function fmt(n){return Number(n||0).toLocaleString('pt-BR');}
+function fmtR(n){return 'R$ '+fmt(n);}
+function parseEventDate(h){
+  // Try to parse date from state or plan
+  try{
+    const st=JSON.parse(h.state||'{}');
+    const dateStr=st.date||'';
+    if(!dateStr)return null;
+    const months={janeiro:0,fevereiro:1,'março':2,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
+    const low=dateStr.toLowerCase();
+    const yearM=low.match(/\b(20\d{2})\b/);if(!yearM)return null;
+    const yr=parseInt(yearM[1]);
+    let mo=-1;
+    for(const[name,idx]of Object.entries(months)){if(low.includes(name)){mo=idx;break;}}
+    if(mo===-1){const nm=low.match(/\b(0?[1-9]|1[0-2])[\/\-](20\d{2})\b/);if(nm)mo=parseInt(nm[1])-1;}
+    if(mo===-1)return null;
+    return new Date(yr,mo,1);
+  }catch(e){return null;}
+}
+function daysUntil(d){
+  if(!d)return null;
+  const now=new Date();now.setHours(0,0,0,0);
+  return Math.round((d-now)/(1000*60*60*24));
+}
+function typeColor(tipo){
+  const t=(tipo||'').toLowerCase();
+  if(t.includes('corporativo'))return{bg:var_('--blue-bg'),txt:var_('--blue'),bd:var_('--blue-bd')};
+  if(t.includes('casamento'))return{bg:'#FBEAF0',txt:'#993556',bd:'#ED93B1'};
+  if(t.includes('gala')||t.includes('celebrat'))return{bg:var_('--gold-bg'),txt:var_('--amber'),bd:var_('--gold-bd')};
+  if(t.includes('simpósi')||t.includes('educat'))return{bg:var_('--purple-bg'),txt:var_('--purple'),bd:var_('--purple-bd')};
+  if(t.includes('festa')||t.includes('social'))return{bg:'#E1F5EE',txt:'#0F6E56',bd:'#5DCAA5'};
+  if(t.includes('feira')||t.includes('exposi'))return{bg:var_('--amber-bg'),txt:var_('--amber'),bd:var_('--amber-bd')};
+  return{bg:var_('--paper2'),txt:var_('--ink2'),bd:var_('--paper3')};
+}
+function var_(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+const TYPE_COLORS_CHART=['#c9a84c','#534AB7','#2d6a4f','#c0392b','#1a4a7a','#BA7517','#993556','#0F6E56'];
+
+// ══ OVERVIEW ══════════════════════════════════════════
+function renderOverview(){
+  if(!HIST.length){
+    document.getElementById('ov-sub').textContent='Nenhum evento criado ainda.';
+    ['m-total','m-volume','m-next-days','m-tipos'].forEach(id=>document.getElementById(id).textContent='0');
+    document.getElementById('m-next-name').textContent='dias restantes';
+    document.getElementById('next-events-list').innerHTML=emptyState('Nenhum evento com data definida');
+    document.getElementById('recent-events-list').innerHTML=emptyState('Crie seu primeiro evento no sistema');
+    return;
+  }
+  // Metrics
+  const total=HIST.length;
+  const volume=HIST.reduce((s,h)=>s+(h.budget||0),0);
+  // Next event
+  const withDates=HIST.map(h=>({h,d:parseEventDate(h)})).filter(x=>x.d&&daysUntil(x.d)>=0).sort((a,b)=>a.d-b.d);
+  const nextEv=withDates[0];
+  const nextDays=nextEv?daysUntil(nextEv.d):null;
+  // Types
+  const tipos=new Set(HIST.map(h=>(h.tipo||'Outro').split('+')[0].trim()));
+  document.getElementById('ov-sub').textContent=`${total} evento${total!==1?'s':''} · Volume total: ${fmtR(volume)}`;
+  document.getElementById('m-total').textContent=total;
+  document.getElementById('m-volume').textContent=volume>=1000000?'R$'+(volume/1000000).toFixed(1)+'M':volume>=1000?'R$'+(volume/1000).toFixed(0)+'k':fmtR(volume);
+  document.getElementById('m-next-days').textContent=nextDays!==null?nextDays:'—';
+  document.getElementById('m-next-name').textContent=nextEv?nextEv.h.name:'sem datas definidas';
+  document.getElementById('m-tipos').textContent=tipos.size;
+  // Next events
+  const nextList=document.getElementById('next-events-list');
+  if(!withDates.length){nextList.innerHTML=emptyState('Nenhum evento com data definida');}
+  else{
+    nextList.innerHTML=`<div class="next-list">${withDates.slice(0,4).map(({h,d})=>{
+      const days=daysUntil(d);
+      const c=typeColor(h.tipo);
+      return `<div class="next-item" onclick="openModal(${HIST.indexOf(h)})">
+        <div class="next-countdown"><div class="nc-num">${days}</div><div class="nc-label">${days===1?'dia':'dias'}</div></div>
+        <div class="next-info">
+          <div class="next-name">${h.name}</div>
+          <div class="next-meta"><span style="color:${c.txt}">${h.tipo||'—'}</span><span>📍 ${h.city||'—'}</span><span>💰 ${fmtR(h.budget)}</span></div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+  // Recent events
+  const recentList=document.getElementById('recent-events-list');
+  recentList.innerHTML=`<div class="evt-list">${HIST.slice(0,6).map((h,i)=>{
+    const c=typeColor(h.tipo);
+    const d=parseEventDate(h);const days=daysUntil(d);
+    return `<div class="evt-item" onclick="openModal(${i})">
+      <div class="evt-dot" style="background:${c.txt}"></div>
+      <div class="evt-info">
+        <div class="evt-name">${h.name}</div>
+        <div class="evt-meta"><span>${h.tipo||'—'}</span><span>${h.city||'—'}</span><span>👥 ${fmt(h.guests)}</span></div>
+      </div>
+      ${days!==null?`<span class="evt-date-badge" style="background:${c.bg};color:${c.txt}">${days===0?'Hoje':days>0?days+'d':Math.abs(days)+'d atrás'}</span>`:''}
+      <div class="evt-budget">${fmtR(h.budget)}</div>
+    </div>`;
+  }).join('')}</div>`;
+  // Charts
+  renderTipoChart();
+  renderBudgetChart();
+}
+
+function renderTipoChart(){
+  const tipoMap={};
+  HIST.forEach(h=>{const t=(h.tipo||'Outro').split('+')[0].trim().substring(0,20);tipoMap[t]=(tipoMap[t]||0)+1;});
+  const labels=Object.keys(tipoMap);
+  const data=Object.values(tipoMap);
+  const ctx=document.getElementById('chart-tipos');
+  if(!ctx)return;
+  if(ctx._chart)ctx._chart.destroy();
+  ctx._chart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:TYPE_COLORS_CHART,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},color:'#5a534d'}}}}});
+}
+
+function renderBudgetChart(){
+  const ctx=document.getElementById('chart-budget');if(!ctx)return;
+  if(ctx._chart)ctx._chart.destroy();
+  const data=HIST.slice(0,8).reverse();
+  ctx._chart=new Chart(ctx,{type:'bar',data:{labels:data.map(h=>h.name.substring(0,14)+'…'),datasets:[{data:data.map(h=>h.budget||0),backgroundColor:var_('--gold-bg'),borderColor:var_('--gold'),borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v,font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+
+// ══ CALENDAR ══════════════════════════════════════════
+function calNav(dir){
+  if(dir===0){calYear=new Date().getFullYear();calMonth=new Date().getMonth();}
+  else{calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;}}
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('cal-month-title').textContent=months[calMonth]+' '+calYear;
+  const grid=document.getElementById('cal-grid');
+  const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const eventsInMonth=HIST.filter(h=>{const d=parseEventDate(h);return d&&d.getFullYear()===calYear&&d.getMonth()===calMonth;});
+  const first=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+  const today=new Date();
+  let html=days.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+  // Prev month days
+  for(let i=first-1;i>=0;i--){
+    html+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
+  }
+  // Current month
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const evs=eventsInMonth.filter(h=>{const dd=parseEventDate(h);return dd&&dd.getDate()===d;});
+    const hasEv=evs.length>0;
+    html+=`<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}">
+      <div class="cal-day-num">${d}</div>
+      ${evs.map(h=>{const c=typeColor(h.tipo);return`<div class="cal-evt-pill" style="background:${c.bg};color:${c.txt}" onclick="openModal(${HIST.indexOf(h)})" title="${h.name}">${h.name.substring(0,12)}</div>`;}).join('')}
+    </div>`;
+  }
+  // Next month fill
+  const total=first+daysInMonth;
+  const remaining=(7-total%7)%7;
+  for(let d=1;d<=remaining;d++){
+    html+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+  grid.innerHTML=html;
+  // Month event list
+  const mel=document.getElementById('cal-month-events');
+  if(!eventsInMonth.length){mel.innerHTML=`<div style="padding:1rem 0;color:var(--ink3);font-size:13px">Nenhum evento neste mês.</div>`;}
+  else{
+    mel.innerHTML=`<div class="evt-list">${eventsInMonth.map(h=>{
+      const d=parseEventDate(h);const days=daysUntil(d);const c=typeColor(h.tipo);
+      return `<div class="evt-item" onclick="openModal(${HIST.indexOf(h)})">
+        <div class="evt-dot" style="background:${c.txt}"></div>
+        <div class="evt-info"><div class="evt-name">${h.name}</div><div class="evt-meta"><span>${h.tipo||'—'}</span><span>${h.city||'—'}</span></div></div>
+        <span class="evt-date-badge" style="background:${c.bg};color:${c.txt}">${d.getDate()}/${d.getMonth()+1}</span>
+        <div class="evt-budget">${fmtR(h.budget)}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+}
+
+// ══ EVENTS PAGE ═══════════════════════════════════════
+function renderEvents(){
+  // Populate filter
+  const tipoSel=document.getElementById('filter-tipo');
+  const tipos=[...new Set(HIST.map(h=>(h.tipo||'Outro').split('+')[0].trim()))];
+  const curTipo=tipoSel.value;
+  tipoSel.innerHTML=`<option value="">Todos os tipos</option>`+tipos.map(t=>`<option value="${t}"${curTipo===t?' selected':''}>${t}</option>`).join('');
+  const sort=document.getElementById('filter-sort').value;
+  let data=[...HIST];
+  if(curTipo)data=data.filter(h=>(h.tipo||'').includes(curTipo));
+  if(sort==='date-asc')data.reverse();
+  else if(sort==='budget-desc')data.sort((a,b)=>(b.budget||0)-(a.budget||0));
+  else if(sort==='budget-asc')data.sort((a,b)=>(a.budget||0)-(b.budget||0));
+  const wrap=document.getElementById('events-table-wrap');
+  if(!data.length){wrap.innerHTML=emptyState('Nenhum evento encontrado.');return;}
+  wrap.innerHTML=`<table class="fin-table" style="min-width:600px">
+    <thead><tr><th>Evento</th><th>Tipo</th><th>Cliente</th><th>Cidade</th><th>Data</th><th>Convidados</th><th>Orçamento</th><th></th></tr></thead>
+    <tbody>${data.map(h=>{
+      const c=typeColor(h.tipo);
+      const d=parseEventDate(h);const days=daysUntil(d);
+      const st=JSON.parse(h.state||'{}');
+      return`<tr style="cursor:pointer" onclick="openModal(${HIST.indexOf(h)})">
+        <td><strong>${h.name}</strong><div style="font-size:11px;color:var(--ink3)">${h.date||'Criado em '+h.date}</div></td>
+        <td><span class="fin-badge" style="background:${c.bg};color:${c.txt}">${(h.tipo||'—').substring(0,20)}</span></td>
+        <td style="font-size:12px">${st.cliente||'—'}</td>
+        <td style="font-size:12px">${h.city||'—'}</td>
+        <td style="font-size:12px">${st.date||'—'}${days!==null?`<div style="font-size:10px;color:${days>=0?'var(--green)':'var(--red)'}">${days>=0?days+'d restantes':Math.abs(days)+'d atrás'}</div>`:''}</td>
+        <td style="font-size:12px">${fmt(h.guests)}</td>
+        <td style="font-weight:600;color:var(--green)">${fmtR(h.budget)}</td>
+        <td style="font-size:12px;color:var(--ink3)">›</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ══ FINANCE ═══════════════════════════════════════════
+function renderFinance(){
+  if(!HIST.length){
+    document.getElementById('fin-table-wrap').innerHTML=emptyState('Nenhum evento criado ainda.');
+    return;
+  }
+  const total=HIST.reduce((s,h)=>s+(h.budget||0),0);
+  const avg=Math.round(total/HIST.length);
+  const maxH=HIST.reduce((a,b)=>(b.budget||0)>(a.budget||0)?b:a,HIST[0]);
+  document.getElementById('fin-total').textContent=total>=1000000?'R$'+(total/1000000).toFixed(1)+'M':fmtR(total);
+  document.getElementById('fin-avg').textContent=avg>=1000?'R$'+(avg/1000).toFixed(0)+'k':fmtR(avg);
+  document.getElementById('fin-max').textContent=fmtR(maxH.budget);
+  document.getElementById('fin-max-name').textContent=maxH.name;
+  // Bar chart
+  const bCtx=document.getElementById('chart-fin-bar');
+  if(bCtx._chart)bCtx._chart.destroy();
+  const sorted=[...HIST].sort((a,b)=>(b.budget||0)-(a.budget||0)).slice(0,10);
+  bCtx._chart=new Chart(bCtx,{type:'bar',data:{labels:sorted.map(h=>h.name.substring(0,12)+'…'),datasets:[{data:sorted.map(h=>h.budget||0),backgroundColor:TYPE_COLORS_CHART[0],borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v,font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  // Category distribution (aggregate from all plans)
+  const catMap={};
+  HIST.forEach(h=>{
+    try{
+      const plan=JSON.parse(h.plan||'{}');
+      (plan.orcamento||[]).forEach(o=>{
+        const cat=o.cat||'Outros';
+        const val=Math.round((h.budget||0)*((o.pct||0)/100));
+        catMap[cat]=(catMap[cat]||0)+val;
+      });
+    }catch(e){}
+  });
+  const catLabels=Object.keys(catMap).slice(0,8);
+  const catVals=catLabels.map(k=>catMap[k]);
+  const cCtx=document.getElementById('chart-fin-cat');
+  if(cCtx._chart)cCtx._chart.destroy();
+  cCtx._chart=new Chart(cCtx,{type:'doughnut',data:{labels:catLabels,datasets:[{data:catVals,backgroundColor:TYPE_COLORS_CHART,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},color:'#5a534d'}}}}});
+  // Table
+  const wrap=document.getElementById('fin-table-wrap');
+  wrap.innerHTML=`<div style="overflow-x:auto"><table class="fin-table" style="min-width:500px">
+    <thead><tr><th>Evento</th><th>Cliente</th><th>Data</th><th>Orçamento</th><th>% do total</th></tr></thead>
+    <tbody>${HIST.map(h=>{
+      const pct=total?Math.round((h.budget||0)/total*100):0;
+      const st=JSON.parse(h.state||'{}');
+      return`<tr>
+        <td><strong>${h.name}</strong></td>
+        <td style="font-size:12px;color:var(--ink2)">${st.cliente||'—'}</td>
+        <td style="font-size:12px;color:var(--ink2)">${st.date||'—'}</td>
+        <td style="font-weight:600;color:var(--green)">${fmtR(h.budget)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:6px;background:var(--paper3);border-radius:3px;overflow:hidden;min-width:60px">
+              <div style="width:${pct}%;height:100%;background:var(--gold);border-radius:3px"></div>
+            </div>
+            <span style="font-size:12px;font-weight:600;color:var(--gold);min-width:30px">${pct}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+// ══ CHECKLIST ════════════════════════════════════════
+function renderChecklist(){
+  const sel=document.getElementById('chk-filter');
+  const curVal=sel.value;
+  sel.innerHTML=`<option value="">Todos os eventos</option>`+HIST.map((h,i)=>`<option value="${i}"${curVal==i?' selected':''}>${h.name}</option>`).join('');
+  const filtered=curVal!==''?[{h:HIST[parseInt(curVal)],idx:parseInt(curVal)}]:HIST.map((h,i)=>({h,idx:i}));
+  const wrap=document.getElementById('checklist-content');
+  if(!filtered.length||!filtered[0].h){wrap.innerHTML=emptyState('Nenhum evento encontrado.');return;}
+  wrap.innerHTML=filtered.map(({h,idx})=>{
+    let plan={};
+    try{plan=JSON.parse(h.plan||'{}');}catch(e){}
+    const chk=plan.checklist||[];
+    if(!chk.length)return'';
+    const totalItems=chk.reduce((s,g)=>s+(g.itens||[]).length,0);
+    const doneItems=chk.reduce((s,g)=>(g.itens||[]).reduce((ss,_,ii)=>ss+(chkState[`${idx}_${g.grupo}_${ii}`]?1:0),s),0);
+    const pct=totalItems?Math.round(doneItems/totalItems*100):0;
+    const c=typeColor(h.tipo);
+    return`<div class="card full">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div>
+          <div style="font-size:15px;font-weight:600">${h.name}</div>
+          <div style="font-size:12px;color:var(--ink3)">${h.tipo||'—'} · ${h.city||'—'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'DM Serif Display',serif;font-size:24px;color:${pct===100?'var(--green)':'var(--gold)'}">${pct}%</div>
+          <div style="font-size:11px;color:var(--ink3)">${doneItems}/${totalItems} itens</div>
+        </div>
+      </div>
+      <div class="chk-prog-bar" style="margin-bottom:1rem"><div class="chk-prog-fill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--gold)'}"></div></div>
+      ${chk.map(g=>{
+        const gDone=(g.itens||[]).filter((_,ii)=>chkState[`${idx}_${g.grupo}_${ii}`]).length;
+        return`<div class="chk-section">
+          <div class="chk-section-title">
+            <span>${g.grupo}</span>
+            <span style="font-size:11px;color:var(--ink3);font-weight:400">${gDone}/${(g.itens||[]).length}</span>
+          </div>
+          ${(g.itens||[]).map((item,ii)=>{
+            const key=`${idx}_${g.grupo}_${ii}`;
+            const done=!!chkState[key];
+            return`<div class="chk-row${done?' done':''}" onclick="toggleChk('${key}',this)">
+              <div class="chk-box">${done?'✓':''}</div>
+              <div><div class="chk-label">${item}</div></div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function toggleChk(key,el){
+  chkState[key]=!chkState[key];
+  saveChkState();
+  el.classList.toggle('done',chkState[key]);
+  el.querySelector('.chk-box').textContent=chkState[key]?'✓':'';
+  // Update progress bar
+  renderChecklist();
+}
+
+// ══ MODAL ════════════════════════════════════════════
+function openModal(idx){
+  const h=HIST[idx];if(!h)return;
+  let plan={},st={};
+  try{plan=JSON.parse(h.plan||'{}');}catch(e){}
+  try{st=JSON.parse(h.state||'{}');}catch(e){}
+  const c=typeColor(h.tipo);
+  const d=parseEventDate(h);const days=daysUntil(d);
+  const chk=plan.checklist||[];
+  const totalItems=chk.reduce((s,g)=>s+(g.itens||[]).length,0);
+  const doneItems=chk.reduce((s,g)=>(g.itens||[]).reduce((ss,_,ii)=>ss+(chkState[`${idx}_${g.grupo}_${ii}`]?1:0),s),0);
+  const pct=totalItems?Math.round(doneItems/totalItems*100):0;
+  document.getElementById('modal-body').innerHTML=`
+    <div class="modal-header">
+      <div>
+        <span class="fin-badge" style="background:${c.bg};color:${c.txt};margin-bottom:6px;display:inline-block">${h.tipo||'—'}</span>
+        <div class="modal-title">${h.name}</div>
+        <div style="font-size:13px;color:var(--ink3);margin-top:2px">Criado em ${h.date}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem">
+      <div style="background:var(--paper2);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">ORÇAMENTO</div>
+        <div style="font-size:18px;font-weight:700;color:var(--green)">${fmtR(h.budget)}</div>
+      </div>
+      <div style="background:var(--paper2);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">CONVIDADOS</div>
+        <div style="font-size:18px;font-weight:700">${fmt(h.guests)}</div>
+      </div>
+      <div style="background:var(--paper2);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">CHECKLIST</div>
+        <div style="font-size:18px;font-weight:700;color:${pct===100?'var(--green)':'var(--gold)'}">${pct}%</div>
+      </div>
+    </div>
+    ${st.cliente||st.promotor?`<div class="modal-sec">
+      <div class="modal-sec-title">Partes envolvidas</div>
+      <div class="modal-chips">
+        ${st.cliente?`<span class="modal-chip">👤 ${st.cliente}</span>`:''}
+        ${st.promotor?`<span class="modal-chip">🎯 ${st.promotor}</span>`:''}
+        ${h.city?`<span class="modal-chip">📍 ${h.city}</span>`:''}
+        ${st.date?`<span class="modal-chip">📅 ${st.date}</span>`:''}
+        ${days!==null?`<span class="modal-chip" style="background:${days>=0?'var(--green-bg)':'var(--red-bg)'}; color:${days>=0?'var(--green)':'var(--red)'}">${days>=0?days+'d restantes':Math.abs(days)+'d atrás'}</span>`:''}
+      </div>
+    </div><div class="divider"></div>`:''}
+    ${plan.conceito?`<div class="modal-sec"><div class="modal-sec-title">Conceito</div><p style="font-size:13px;color:var(--ink2);line-height:1.6">${plan.conceito}</p></div><div class="divider"></div>`:''}
+    ${plan.nomes?.length?`<div class="modal-sec"><div class="modal-sec-title">Nomes sugeridos</div><div class="modal-chips">${plan.nomes.map(n=>`<span class="modal-chip" style="background:var(--gold-bg);border:1px solid var(--gold-bd)">${n}</span>`).join('')}</div></div><div class="divider"></div>`:''}
+    ${plan.orcamento?.length?`<div class="modal-sec">
+      <div class="modal-sec-title">Orçamento</div>
+      ${plan.orcamento.map(o=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--paper2)">
+        <span style="font-size:13px">${o.cat}</span>
+        <span style="font-size:13px;font-weight:600;color:var(--green)">${fmtR(Math.round((h.budget||0)*(o.pct/100)))} <span style="font-weight:400;color:var(--ink3)">(${o.pct}%)</span></span>
+      </div>`).join('')}
+    </div><div class="divider"></div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="sistema_producao_eventos.html" target="_blank" class="btn btn-gold">Abrir no sistema</a>
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('open');
+}
+
+// ══ UTILS ════════════════════════════════════════════
+function emptyState(msg){
+  return`<div class="empty-state"><div class="empty-icon">◎</div><p>${msg}<br><a href="sistema_producao_eventos.html" target="_blank">Abrir o sistema</a></p></div>`;
+}
+
+// ══ INIT ════════════════════════════════════════════
+function init(){
+  loadData();
+  updateDashKeyBtn();
+  renderOverview();
+  // Auto-refresh every 30s if user switches back
+  window.addEventListener('focus',()=>{loadData();renderPage(document.querySelector('.page.active')?.id?.replace('pg-',''));});
+}
+init();
+</script>
+</body>
+</html>
