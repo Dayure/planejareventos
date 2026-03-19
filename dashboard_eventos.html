@@ -187,13 +187,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);
 <div class="apikey-overlay" id="apikey-overlay">
   <div class="apikey-modal">
     <h2>Chave da API</h2>
-    <p>Para usar o sistema fora do Claude.ai, você precisa de uma chave de API da Anthropic. Ela fica salva apenas no seu navegador e nunca é enviada para nenhum outro lugar.</p>
+    <p>Suportamos <strong>Anthropic (Claude)</strong> e <strong>Google (Gemini)</strong>. Cole sua chave abaixo — ela fica salva apenas no seu navegador e nunca é enviada para terceiros.</p>
     <div class="apikey-input-wrap">
-      <input type="password" id="apikey-input" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
+      <input type="password" id="apikey-input" placeholder="sk-ant-... ou AIza..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
       <button class="apikey-toggle" onclick="toggleKeyVis()">👁</button>
     </div>
-    <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></div>
-    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
+    <div class="apikey-hint">Anthropic: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · Google: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></div>
+    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-" (Anthropic) ou "AIza" (Google Gemini).</div>
     <div class="apikey-saved" id="apikey-saved">✓ Chave salva!</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="ak-btn ak-btn-gold" onclick="saveKey()">Salvar chave</button>
@@ -389,7 +389,7 @@ function closeKeyModal(){document.getElementById('apikey-overlay').classList.rem
 function toggleKeyVis(){const inp=document.getElementById('apikey-input');inp.type=inp.type==='password'?'text':'password';}
 function saveKey(){
   const val=document.getElementById('apikey-input').value.trim();
-  if(val&&!val.startsWith('sk-ant-')){document.getElementById('apikey-err').style.display='block';return;}
+  if(val&&!val.startsWith('sk-ant-')&&!val.startsWith('AIza')){document.getElementById('apikey-err').style.display='block';return;}
   document.getElementById('apikey-err').style.display='none';
   localStorage.setItem('anthropic_key',val);
   document.getElementById('apikey-saved').style.display='block';

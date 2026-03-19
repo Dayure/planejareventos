@@ -192,13 +192,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
 <div class="apikey-overlay" id="apikey-overlay">
   <div class="apikey-modal">
     <h2>Chave da API</h2>
-    <p>Para usar o sistema fora do Claude.ai, você precisa de uma chave de API da Anthropic. Ela fica salva apenas no seu navegador (localStorage) e nunca é enviada para nenhum outro lugar.</p>
+    <p>Suportamos <strong>Anthropic (Claude)</strong> e <strong>Google (Gemini)</strong>. Cole sua chave abaixo — ela fica salva apenas no seu navegador e nunca é enviada para terceiros.</p>
     <div class="apikey-input-wrap">
-      <input type="password" id="apikey-input" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
+      <input type="password" id="apikey-input" placeholder="sk-ant-... ou AIza..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
       <button class="apikey-toggle" onclick="toggleKeyVis()" id="apikey-eye">👁</button>
     </div>
-    <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · ~R$ 0,20 por planejamento gerado</div>
-    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
+    <div class="apikey-hint">Anthropic: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · Google: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></div>
+    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-" (Anthropic) ou "AIza" (Google Gemini).</div>
     <div class="apikey-saved" id="apikey-saved">✓ Chave salva com sucesso!</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="saveKey()">Salvar chave</button>
@@ -597,7 +597,7 @@ function saveKey(){
   const val=document.getElementById('apikey-input').value.trim();
   const errEl=document.getElementById('apikey-err');
   const okEl=document.getElementById('apikey-saved');
-  if(!val.startsWith('sk-ant-')&&val!==''){errEl.style.display='block';okEl.style.display='none';return;}
+  if(val!==''&&!val.startsWith('sk-ant-')&&!val.startsWith('AIza')){errEl.style.display='block';okEl.style.display='none';return;}
   errEl.style.display='none';
   localStorage.setItem('anthropic_key',val);
   okEl.style.display='block';
@@ -616,6 +616,10 @@ function removeKey(){
 document.getElementById('apikey-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('apikey-overlay'))closeKeyModal();});
 
 // ══ API CALL HELPER ════════════════════════════════════
+function getProvider(){const k=getKey();return k&&k.startsWith('AIza')?'gemini':'anthropic';}
+function cleanAIResponse(raw){
+  return raw.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+}
 function getHeaders(){
   const key=getKey();
   if(key) return{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
@@ -626,12 +630,29 @@ async function callAI(prompt,maxTok=4000){
   if(!getKey()&&!window.location.href.includes('claude.ai')){
     throw new Error('Chave de API não configurada. Clique em "🔑 API Key" para adicionar sua chave.');
   }
+  if(getProvider()==='gemini'){
+    const key=getKey();
+    const r=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:maxTok}})}
+    );
+    if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'HTTP '+r.status);}
+    const d=await r.json();
+    const finishReason=d.candidates?.[0]?.finishReason;
+    if(finishReason&&finishReason!=='STOP'){throw new Error('Resposta cortada pelo limite de tokens. Tente novamente.');}
+    const raw=(d.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+    const clean=cleanAIResponse(raw);
+    if(!clean)throw new Error('Resposta vazia da API.');
+    try{return JSON.parse(clean);}catch(e){throw new Error('Erro ao processar resposta da IA. Tente novamente.');}
+  }
+  // Anthropic
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:getHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTok,messages:[{role:'user',content:prompt}]})});
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'HTTP '+r.status);}
   const d=await r.json();
   if(d.stop_reason==='max_tokens'){throw new Error('Resposta cortada pelo limite de tokens. Tente novamente.');}
   const raw=d.content.filter(x=>x.type==='text').map(x=>x.text).join('').trim();
-  const clean=raw.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+  const clean=cleanAIResponse(raw);
   if(!clean)throw new Error('Resposta vazia da API.');
   try{return JSON.parse(clean);}catch(e){throw new Error('Erro ao processar resposta da IA. Tente novamente.');}
 }
