@@ -20,6 +20,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
 .hdr-nav button{padding:6px 16px;font-size:12px;font-weight:600;border:1.5px solid var(--paper3);border-radius:20px;background:#fff;color:var(--ink2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
 .hdr-nav button:hover{border-color:var(--gold);color:var(--ink)}
 .hdr-nav button.active-nav{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.hdr-nav-cta{background:var(--gold)!important;color:var(--ink)!important;border-color:var(--gold)!important}
 .prog{display:flex;margin-bottom:2rem;border:1px solid var(--paper3);border-radius:var(--rlg);overflow:hidden;background:var(--paper2)}
 .ps{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:.03em;transition:all .3s;border:none;background:transparent;font-family:'DM Sans',sans-serif;cursor:default}
 .ps.done{background:var(--gold-bg);color:var(--gold);cursor:pointer}.ps.done:hover{background:#f9efce}
@@ -62,6 +63,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
 .btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#245540}
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:1.5rem}
+.btn-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .err{background:var(--red-bg);border:1px solid #f5c6c2;border-radius:var(--r);padding:13px 16px;font-size:13px;color:var(--red);margin-bottom:1rem}
 
 /* ── LOADING SCREEN ── */
@@ -200,7 +202,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
     <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · ~R$ 0,20 por planejamento gerado</div>
     <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
     <div class="apikey-saved" id="apikey-saved">✓ Chave salva com sucesso!</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="btn-bar">
       <button class="btn btn-gold" onclick="saveKey()">Salvar chave</button>
       <button class="btn btn-ghost" onclick="closeKeyModal()" id="apikey-cancel" style="display:none">Cancelar</button>
       <button class="btn btn-ghost" onclick="removeKey()" id="apikey-remove" style="display:none;color:var(--red);border-color:#f5c6c2">Remover chave</button>
@@ -216,7 +218,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
     <button class="active-nav" onclick="showMain('form')">Novo evento</button>
     <button onclick="showMain('hist')">Histórico</button>
     <button onclick="showMain('supl')">Fornecedores</button>
-    <button onclick="window.open('dashboard_eventos.html','_blank')" style="background:var(--gold);color:var(--ink);border-color:var(--gold)">◈ Dashboard</button>
+    <button onclick="window.open('dashboard_eventos.html','_blank')" class="hdr-nav-cta">◈ Dashboard</button>
     <button class="apikey-status unset" id="apikey-btn" onclick="openKeyModal()">🔑 API Key</button>
   </div>
 </div>
