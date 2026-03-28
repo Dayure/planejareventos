@@ -183,23 +183,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
 .apikey-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s}
 .apikey-status.set{background:var(--green-bg);color:var(--green)}.apikey-status.unset{background:var(--red-bg);color:var(--red)}
 .view{display:none}.view.on{display:block}
+*:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media print{.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;page-break-inside:avoid}.res-hdr{background:#141210!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.spanel{display:block!important}.stabs,.prog,.hdr-nav{display:none}}
 </style>
 </head>
 <body>
 
 <!-- API KEY MODAL -->
-<div class="apikey-overlay" id="apikey-overlay">
+<div class="apikey-overlay" id="apikey-overlay" role="dialog" aria-modal="true" aria-labelledby="apikey-modal-title">
   <div class="apikey-modal">
-    <h2>Chave da API</h2>
+    <h2 id="apikey-modal-title">Chave da API</h2>
     <p>Para usar o sistema fora do Claude.ai, você precisa de uma chave de API da Anthropic. Ela fica salva apenas no seu navegador (localStorage) e nunca é enviada para nenhum outro lugar.</p>
     <div class="apikey-input-wrap">
       <input type="password" id="apikey-input" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
-      <button class="apikey-toggle" onclick="toggleKeyVis()" id="apikey-eye">👁</button>
+      <button class="apikey-toggle" onclick="toggleKeyVis()" id="apikey-eye" aria-label="Mostrar/ocultar chave">👁</button>
     </div>
     <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · ~R$ 0,20 por planejamento gerado</div>
-    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
-    <div class="apikey-saved" id="apikey-saved">✓ Chave salva com sucesso!</div>
+    <div class="apikey-err" id="apikey-err" role="alert">Chave inválida. Deve começar com "sk-ant-".</div>
+    <div class="apikey-saved" id="apikey-saved" role="status">✓ Chave salva com sucesso!</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="saveKey()">Salvar chave</button>
       <button class="btn btn-ghost" onclick="closeKeyModal()" id="apikey-cancel" style="display:none">Cancelar</button>
@@ -246,7 +247,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
         <button class="sel-btn" data-val="Lançamento de Produto" onclick="selT(this,'tipos')"><span class="sel-icon">🚀</span>Lançamento</button>
         <button class="sel-btn" data-val="__outro__" onclick="selT(this,'tipos')"><span class="sel-icon">✨</span>Outro</button>
       </div>
-      <div id="outro-tipo-f" class="field" style="display:none"><label>Descreva o tipo</label><input type="text" id="outro-tipo-v" placeholder="Ex: Festival de música..." oninput="rTags('tipos')"></div>
+      <div id="outro-tipo-f" class="field" style="display:none"><label for="outro-tipo-v">Descreva o tipo</label><input type="text" id="outro-tipo-v" placeholder="Ex: Festival de música..." oninput="rTags('tipos')"></div>
       <div class="tags-wrap" id="tags-tipos"></div>
     </div>
     <div class="btn-row"><button class="btn btn-ink" id="btn1" onclick="goStep(2)" disabled>Continuar →</button></div>
@@ -258,22 +259,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
       <div class="card-sub">Quanto mais detalhe, melhor o planejamento gerado.</div>
       <div class="row2">
         <div class="field">
-          <label>Cliente — dono do evento</label>
-          <input type="text" id="f-cliente" placeholder="Ex: Instituto Myra Eliane, Empresa XYZ...">
+          <label for="f-cliente">Cliente — dono do evento</label>
+          <input type="text" id="f-cliente" placeholder="Ex: Instituto Myra Eliane, Empresa XYZ..." autocomplete="organization">
           <div class="fhint">Quem contratou / quem o evento representa</div>
         </div>
         <div class="field">
-          <label>Promotor — quem produz</label>
-          <input type="text" id="f-promotor" placeholder="Ex: Nome da sua produtora...">
+          <label for="f-promotor">Promotor — quem produz</label>
+          <input type="text" id="f-promotor" placeholder="Ex: Nome da sua produtora..." autocomplete="organization">
           <div class="fhint">Sua empresa ou nome como produtor</div>
         </div>
       </div>
-      <div class="field"><label>Descrição do evento</label><textarea id="f-desc" placeholder="Objetivo, contexto, data comemorativa, tema, mensagem central..."></textarea></div>
+      <div class="field"><label for="f-desc">Descrição do evento</label><textarea id="f-desc" placeholder="Objetivo, contexto, data comemorativa, tema, mensagem central..."></textarea></div>
       <div class="row2">
-        <div class="field"><label>Cidade / local</label><input type="text" id="f-city" placeholder="Ex: Fortaleza, CE"></div>
-        <div class="field"><label>Mês e ano previsto</label><input type="text" id="f-date" placeholder="Ex: Outubro de 2026" oninput="calcMonths(this.value)"></div>
+        <div class="field"><label for="f-city">Cidade / local</label><input type="text" id="f-city" placeholder="Ex: Fortaleza, CE" autocomplete="address-level2"></div>
+        <div class="field"><label for="f-date">Mês e ano previsto</label><input type="text" id="f-date" placeholder="Ex: Outubro de 2026" oninput="calcMonths(this.value)"></div>
       </div>
-      <div class="field"><label>Público-alvo</label><input type="text" id="f-publico" placeholder="Ex: Parceiros, autoridades, colaboradores..."></div>
+      <div class="field"><label for="f-publico">Público-alvo</label><input type="text" id="f-publico" placeholder="Ex: Parceiros, autoridades, colaboradores..."></div>
     </div>
     <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button><button class="btn btn-ink" onclick="goStep(3)">Continuar →</button></div>
   </div>
@@ -293,7 +294,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
         <div class="fmt-opt" data-val="Híbrido — presencial com transmissão online simultânea" onclick="selT(this,'fmts')"><div class="fmt-icon">💻</div><div><div class="fmt-title">Híbrido (presencial + online)</div><div class="fmt-desc">Transmissão ao vivo para público remoto</div></div></div>
         <div class="fmt-opt" data-val="__outro_fmt__" onclick="selT(this,'fmts')"><div class="fmt-icon">✨</div><div><div class="fmt-title">Outro formato</div><div class="fmt-desc">Descreva um formato personalizado</div></div></div>
       </div>
-      <div id="outro-fmt-f" class="field" style="display:none;margin-top:4px"><label>Descreva o formato</label><input type="text" id="outro-fmt-v" placeholder="Ex: Walk dinner, imersivo..." oninput="rTags('fmts')"></div>
+      <div id="outro-fmt-f" class="field" style="display:none;margin-top:4px"><label for="outro-fmt-v">Descreva o formato</label><input type="text" id="outro-fmt-v" placeholder="Ex: Walk dinner, imersivo..." oninput="rTags('fmts')"></div>
       <div class="tags-wrap" id="tags-fmts"></div>
     </div>
     <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button><button class="btn btn-ink" id="btn3" onclick="goStep(4)" disabled>Continuar →</button></div>
@@ -303,14 +304,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);f
     <div class="card">
       <div class="card-title">Estrutura e orçamento</div>
       <div class="card-sub">Insira os valores reais — aceita números quebrados</div>
-      <div class="field"><label>Número de convidados</label><div class="num-wrap"><input type="number" id="n-guests" min="1" max="999999" step="1" value="150" oninput="upN('guests')"><span class="num-disp" id="nd-guests">150 pessoas</span></div></div>
-      <div class="field"><label>Orçamento disponível (R$)</label><div class="num-wrap"><input type="number" id="n-budget" min="0" max="5000000" step="1" value="50000" oninput="upN('budget')"><span class="num-disp" id="nd-budget">R$ 50.000</span></div><div class="fhint">Aceita qualquer valor até R$ 5.000.000</div></div>
-      <div class="field"><label>Meses até o evento</label><div class="num-wrap"><input type="number" id="n-months" min="1" max="36" step="1" value="4" oninput="upN('months')"><span class="num-disp" id="nd-months">4 meses</span></div></div>
+      <div class="field"><label for="n-guests">Número de convidados</label><div class="num-wrap"><input type="number" id="n-guests" min="1" max="999999" step="1" value="150" oninput="upN('guests')"><span class="num-disp" id="nd-guests">150 pessoas</span></div></div>
+      <div class="field"><label for="n-budget">Orçamento disponível (R$)</label><div class="num-wrap"><input type="number" id="n-budget" min="0" max="5000000" step="1" value="50000" oninput="upN('budget')"><span class="num-disp" id="nd-budget">R$ 50.000</span></div><div class="fhint">Aceita qualquer valor até R$ 5.000.000</div></div>
+      <div class="field"><label for="n-months">Meses até o evento</label><div class="num-wrap"><input type="number" id="n-months" min="1" max="36" step="1" value="4" oninput="upN('months')"><span class="num-disp" id="nd-months">4 meses</span></div></div>
       <div class="row2">
-        <div class="field"><label>Perfil do público</label><select id="f-perfil"><option value="">Selecione...</option><option>Executivos e empresários</option><option>Parceiros institucionais</option><option>Colaboradores internos</option><option>Clientes e convidados VIP</option><option>Público geral / misto</option><option>Autoridades e lideranças</option><option>Família e amigos</option></select></div>
-        <div class="field"><label>Tom do evento</label><select id="f-tom"><option value="">Selecione...</option><option>Sofisticado e elegante</option><option>Emocional e celebrativo</option><option>Formal e institucional</option><option>Descontraído e festivo</option><option>Inovador e moderno</option><option>Intimista e acolhedor</option></select></div>
+        <div class="field"><label for="f-perfil">Perfil do público</label><select id="f-perfil"><option value="">Selecione...</option><option>Executivos e empresários</option><option>Parceiros institucionais</option><option>Colaboradores internos</option><option>Clientes e convidados VIP</option><option>Público geral / misto</option><option>Autoridades e lideranças</option><option>Família e amigos</option></select></div>
+        <div class="field"><label for="f-tom">Tom do evento</label><select id="f-tom"><option value="">Selecione...</option><option>Sofisticado e elegante</option><option>Emocional e celebrativo</option><option>Formal e institucional</option><option>Descontraído e festivo</option><option>Inovador e moderno</option><option>Intimista e acolhedor</option></select></div>
       </div>
-      <div class="field"><label>Detalhes especiais</label><textarea id="f-extra" placeholder="Artista ao vivo, tradução simultânea, celebra 10 anos..." style="min-height:70px"></textarea></div>
+      <div class="field"><label for="f-extra">Detalhes especiais</label><textarea id="f-extra" placeholder="Artista ao vivo, tradução simultânea, celebra 10 anos..." style="min-height:70px"></textarea></div>
     </div>
     <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button><button class="btn btn-gold" onclick="generate()">✦ Gerar planejamento completo</button></div>
   </div>
@@ -612,8 +613,9 @@ function removeKey(){
   document.getElementById('apikey-saved').style.display='none';
   updateKeyBtn();
 }
-// Close modal on overlay click
+// Close modal on overlay click or Escape key
 document.getElementById('apikey-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('apikey-overlay'))closeKeyModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('apikey-overlay').classList.contains('open'))closeKeyModal();});
 
 // ══ API CALL HELPER ════════════════════════════════════
 function getHeaders(){

@@ -178,23 +178,43 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);
 .ak-btn-gold{background:#c9a84c;color:#141210}.ak-btn-gold:hover{background:#b8913a}
 .ak-btn-ghost{background:transparent;color:#5a534d;border:1.5px solid #e5e0d8}.ak-btn-ghost:hover{border-color:#5a534d;color:#141210}
 ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--paper3);border-radius:3px}
-@media(max-width:700px){.sidebar{display:none}.main{margin-left:0}}
+*:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* MOBILE HAMBURGER */
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--ink);border:none;border-radius:var(--r);width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:5px;padding:0}
+.hamburger span{display:block;width:18px;height:2px;background:#fff;border-radius:1px;transition:all .25s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(20,18,16,.5);z-index:99}
+.sb-overlay.open{display:block}
+@media(max-width:700px){
+  .hamburger{display:flex}
+  .sidebar{transform:translateX(-100%);transition:transform .25s}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding-top:3.5rem}
+}
 </style>
 </head>
 <body>
 
+<!-- MOBILE HAMBURGER -->
+<button class="hamburger" id="hamburger-btn" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
 <!-- API KEY MODAL -->
-<div class="apikey-overlay" id="apikey-overlay">
+<div class="apikey-overlay" id="apikey-overlay" role="dialog" aria-modal="true" aria-labelledby="apikey-modal-title">
   <div class="apikey-modal">
-    <h2>Chave da API</h2>
+    <h2 id="apikey-modal-title">Chave da API</h2>
     <p>Para usar o sistema fora do Claude.ai, você precisa de uma chave de API da Anthropic. Ela fica salva apenas no seu navegador e nunca é enviada para nenhum outro lugar.</p>
     <div class="apikey-input-wrap">
       <input type="password" id="apikey-input" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveKey()">
-      <button class="apikey-toggle" onclick="toggleKeyVis()">👁</button>
+      <button class="apikey-toggle" onclick="toggleKeyVis()" aria-label="Mostrar/ocultar chave">👁</button>
     </div>
     <div class="apikey-hint">Gere sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></div>
-    <div class="apikey-err" id="apikey-err">Chave inválida. Deve começar com "sk-ant-".</div>
-    <div class="apikey-saved" id="apikey-saved">✓ Chave salva!</div>
+    <div class="apikey-err" id="apikey-err" role="alert">Chave inválida. Deve começar com "sk-ant-".</div>
+    <div class="apikey-saved" id="apikey-saved" role="status">✓ Chave salva!</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="ak-btn ak-btn-gold" onclick="saveKey()">Salvar chave</button>
       <button class="ak-btn ak-btn-ghost" onclick="closeKeyModal()" id="apikey-cancel" style="display:none">Cancelar</button>
@@ -204,24 +224,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);
 </div>
 
 <!-- SIDEBAR -->
-<nav class="sidebar">
+<nav class="sidebar" id="sidebar" aria-label="Navegação principal">
   <div class="sb-logo">
     <div class="sb-logo-tag">Produtora</div>
     <div class="sb-logo-name">Dashboard de <em>eventos</em></div>
   </div>
   <div class="sb-nav">
     <div class="sb-section">Visão geral</div>
-    <button class="sb-item active" onclick="nav('overview')"><span class="sb-icon">◈</span>Overview</button>
-    <button class="sb-item" onclick="nav('calendar')"><span class="sb-icon">◷</span>Calendário</button>
+    <button class="sb-item active" onclick="nav('overview',this)" aria-current="page"><span class="sb-icon" aria-hidden="true">◈</span>Overview</button>
+    <button class="sb-item" onclick="nav('calendar',this)"><span class="sb-icon" aria-hidden="true">◷</span>Calendário</button>
     <div class="sb-section">Gestão</div>
-    <button class="sb-item" onclick="nav('events')"><span class="sb-icon">◉</span>Eventos</button>
-    <button class="sb-item" onclick="nav('finance')"><span class="sb-icon">◈</span>Financeiro</button>
-    <button class="sb-item" onclick="nav('checklist')"><span class="sb-icon">◎</span>Checklists</button>
+    <button class="sb-item" onclick="nav('events',this)"><span class="sb-icon" aria-hidden="true">◉</span>Eventos</button>
+    <button class="sb-item" onclick="nav('finance',this)"><span class="sb-icon" aria-hidden="true">◈</span>Financeiro</button>
+    <button class="sb-item" onclick="nav('checklist',this)"><span class="sb-icon" aria-hidden="true">◎</span>Checklists</button>
   </div>
   <div class="sb-footer">
     <a href="sistema_producao_eventos.html" target="_blank">← Voltar ao sistema</a>
     <div style="margin-top:10px">
-      <button id="dash-apikey-btn" onclick="openKeyModal()" style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:all .2s">🔑 API Key</button>
+      <button id="dash-apikey-btn" onclick="openKeyModal()" aria-label="Gerenciar chave da API" style="background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:all .2s">🔑 API Key</button>
     </div>
   </div>
 </nav>
@@ -238,7 +258,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);
       </div>
       <a href="sistema_producao_eventos.html" target="_blank" class="btn btn-gold">+ Novo evento</a>
     </div>
-    <div class="metrics">
+    <div class="metrics" aria-live="polite" aria-label="Métricas principais">
       <div class="metric gold"><div class="metric-label">Total de eventos</div><div class="metric-val gold" id="m-total">—</div><div class="metric-sub">planejamentos criados</div></div>
       <div class="metric green"><div class="metric-label">Volume total</div><div class="metric-val green" id="m-volume">—</div><div class="metric-sub">em orçamentos</div></div>
       <div class="metric blue"><div class="metric-label">Próximo evento</div><div class="metric-val blue" id="m-next-days">—</div><div class="metric-sub" id="m-next-name">dias restantes</div></div>
@@ -278,9 +298,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);
       <div class="cal-header">
         <div class="cal-month" id="cal-month-title">—</div>
         <div class="cal-nav">
-          <button onclick="calNav(-1)">‹</button>
-          <button onclick="calNav(0)" style="width:auto;padding:0 10px;font-size:12px">Hoje</button>
-          <button onclick="calNav(1)">›</button>
+          <button onclick="calNav(-1)" aria-label="Mês anterior">‹</button>
+          <button onclick="calNav(0)" aria-label="Ir para hoje" style="width:auto;padding:0 10px;font-size:12px">Hoje</button>
+          <button onclick="calNav(1)" aria-label="Próximo mês">›</button>
         </div>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
@@ -361,7 +381,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper2);color:var(--ink);
 </div><!-- main -->
 
 <!-- EVENT DETAIL MODAL -->
-<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+<div class="modal-overlay" id="modal" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal" id="modal-body"></div>
 </div>
 
@@ -423,11 +443,12 @@ function saveChkState(){
 }
 
 // ══ NAVIGATION ════════════════════════════════════════
-function nav(page){
+function nav(page,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>{b.classList.remove('active');b.removeAttribute('aria-current');});
   document.getElementById('pg-'+page).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if(btn){btn.classList.add('active');btn.setAttribute('aria-current','page');}
+  closeSidebar();
   renderPage(page);
 }
 function renderPage(page){
@@ -627,24 +648,24 @@ function renderEvents(){
   else if(sort==='budget-asc')data.sort((a,b)=>(a.budget||0)-(b.budget||0));
   const wrap=document.getElementById('events-table-wrap');
   if(!data.length){wrap.innerHTML=emptyState('Nenhum evento encontrado.');return;}
-  wrap.innerHTML=`<table class="fin-table" style="min-width:600px">
+  wrap.innerHTML=`<div style="overflow-x:auto"><table class="fin-table" style="min-width:600px">
     <thead><tr><th>Evento</th><th>Tipo</th><th>Cliente</th><th>Cidade</th><th>Data</th><th>Convidados</th><th>Orçamento</th><th></th></tr></thead>
     <tbody>${data.map(h=>{
       const c=typeColor(h.tipo);
       const d=parseEventDate(h);const days=daysUntil(d);
       const st=JSON.parse(h.state||'{}');
       return`<tr style="cursor:pointer" onclick="openModal(${HIST.indexOf(h)})">
-        <td><strong>${h.name}</strong><div style="font-size:11px;color:var(--ink3)">${h.date||'Criado em '+h.date}</div></td>
+        <td><strong>${h.name}</strong><div style="font-size:11px;color:var(--ink3)">${h.date||'—'}</div></td>
         <td><span class="fin-badge" style="background:${c.bg};color:${c.txt}">${(h.tipo||'—').substring(0,20)}</span></td>
         <td style="font-size:12px">${st.cliente||'—'}</td>
         <td style="font-size:12px">${h.city||'—'}</td>
         <td style="font-size:12px">${st.date||'—'}${days!==null?`<div style="font-size:10px;color:${days>=0?'var(--green)':'var(--red)'}">${days>=0?days+'d restantes':Math.abs(days)+'d atrás'}</div>`:''}</td>
         <td style="font-size:12px">${fmt(h.guests)}</td>
         <td style="font-weight:600;color:var(--green)">${fmtR(h.budget)}</td>
-        <td style="font-size:12px;color:var(--ink3)">›</td>
+        <td style="font-size:12px;color:var(--ink3)" aria-hidden="true">›</td>
       </tr>`;
     }).join('')}</tbody>
-  </table>`;
+  </table></div>`;
 }
 
 // ══ FINANCE ═══════════════════════════════════════════
@@ -782,10 +803,10 @@ function openModal(idx){
     <div class="modal-header">
       <div>
         <span class="fin-badge" style="background:${c.bg};color:${c.txt};margin-bottom:6px;display:inline-block">${h.tipo||'—'}</span>
-        <div class="modal-title">${h.name}</div>
+        <div class="modal-title" id="modal-title">${h.name}</div>
         <div style="font-size:13px;color:var(--ink3);margin-top:2px">Criado em ${h.date}</div>
       </div>
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <button class="modal-close" onclick="closeModal()" aria-label="Fechar detalhes do evento">×</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem">
       <div style="background:var(--paper2);border-radius:var(--r);padding:12px;text-align:center">
@@ -832,7 +853,27 @@ function closeModal(e){
 
 // ══ UTILS ════════════════════════════════════════════
 function emptyState(msg){
-  return`<div class="empty-state"><div class="empty-icon">◎</div><p>${msg}<br><a href="sistema_producao_eventos.html" target="_blank">Abrir o sistema</a></p></div>`;
+  return`<div class="empty-state"><div class="empty-icon" aria-hidden="true">◎</div><p>${msg}</p><a href="sistema_producao_eventos.html" target="_blank" class="btn btn-gold" style="margin-top:12px;display:inline-flex">+ Criar primeiro evento</a></div>`;
+}
+
+// ══ MOBILE SIDEBAR ════════════════════════════════════
+function toggleSidebar(){
+  const sidebar=document.getElementById('sidebar');
+  const btn=document.getElementById('hamburger-btn');
+  const overlay=document.getElementById('sb-overlay');
+  const isOpen=sidebar.classList.toggle('open');
+  btn.classList.toggle('open',isOpen);
+  overlay.classList.toggle('open',isOpen);
+  btn.setAttribute('aria-expanded',isOpen);
+}
+function closeSidebar(){
+  const sidebar=document.getElementById('sidebar');
+  const btn=document.getElementById('hamburger-btn');
+  const overlay=document.getElementById('sb-overlay');
+  sidebar.classList.remove('open');
+  btn.classList.remove('open');
+  overlay.classList.remove('open');
+  btn.setAttribute('aria-expanded','false');
 }
 
 // ══ INIT ════════════════════════════════════════════
@@ -840,6 +881,14 @@ function init(){
   loadData();
   updateDashKeyBtn();
   renderOverview();
+  // Close modal and API key overlay on Escape
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      if(document.getElementById('modal').classList.contains('open')){closeModal();}
+      else if(document.getElementById('apikey-overlay').classList.contains('open')){closeKeyModal();}
+      else if(document.getElementById('sidebar').classList.contains('open')){closeSidebar();}
+    }
+  });
   // Auto-refresh every 30s if user switches back
   window.addEventListener('focus',()=>{loadData();renderPage(document.querySelector('.page.active')?.id?.replace('pg-',''));});
 }
